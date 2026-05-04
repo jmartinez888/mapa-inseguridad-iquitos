@@ -39,7 +39,14 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
       },
     })
 
-    return position ? <Marker position={position} icon={customIcon} /> : null
+    return position ? (
+      <Marker
+        {...({
+          position: position,
+          icon: customIcon
+        } as any)}
+      />
+    ) : null;
   }
 
   // No renderizar nada hasta que el componente esté montado en el navegador
@@ -48,19 +55,23 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
   return (
     <div className="h-full w-full relative">
       <MapContainer
-        key="iquitos-security-map" // 🔑 Key única para forzar re-render limpio y evitar el error "container being reused"
-        center={DEFAULT_CENTER}
-        zoom={13}
-        scrollWheelZoom={true}
-        className="h-full w-full"
-        style={{ height: '100%', width: '100%' }}
+        {...({
+          key: "iquitos-security-map",
+          center: DEFAULT_CENTER,
+          zoom: 13,
+          scrollWheelZoom: true,
+          className: "h-full w-full",
+          style: { height: '100%', width: '100%' }
+        } as any)}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          {...({
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          } as any)}
         />
         <LocationMarker />
       </MapContainer>
     </div>
-  )
+  );
 }

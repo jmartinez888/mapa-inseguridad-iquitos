@@ -123,24 +123,29 @@ export default function MapaClient() {
             {/* CONTENEDOR DEL MAPA */}
             <div className="h-[650px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 relative bg-slate-50">
                 <MapContainer
-                    center={CENTER}
-                    zoom={13}
-                    scrollWheelZoom={true}
-                    className="h-full w-full"
+                    {...({
+                        center: CENTER,
+                        zoom: 13,
+                        scrollWheelZoom: true,
+                        className: "h-full w-full"
+                    } as any)}
                 >
                     <TileLayer
-                        url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        {...({
+                            url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        } as any)}
                     />
 
                     <FullscreenControl />
 
-                    {/* MAPEADO DE PUNTOS REALES DESDE NEON */}
                     {data.map((item) => (
                         <Marker
                             key={item.id}
-                            position={[item.latitude, item.longitude] as LatLngExpression}
-                            icon={customIcon}
+                            {...({
+                                position: [item.latitude, item.longitude],
+                                icon: customIcon
+                            } as any)}
                         >
                             <Popup>
                                 <div className="min-w-[180px] p-2">
@@ -160,7 +165,7 @@ export default function MapaClient() {
                     ))}
                 </MapContainer>
 
-                {/* INDICADOR DE CARGA / SINCRONIZACIÓN */}
+                {/* INDICADOR DE CARGA */}
                 {loading && (
                     <div className="absolute top-6 right-6 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-3">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
