@@ -9,7 +9,7 @@ export default function ViolenceGenderChart({ data }: any) {
             </h3>
             <div className="flex-1">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <BarChart data={data} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                         <XAxis
                             dataKey="genero"
@@ -27,9 +27,25 @@ export default function ViolenceGenderChart({ data }: any) {
                             iconType="square"
                             wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase', paddingTop: '30px' }}
                         />
-                        <Bar dataKey="Con violencia" stackId="a" fill="#D64545" radius={[0, 0, 0, 0]} label={{ position: 'center', fill: '#fff', fontSize: 12, fontWeight: 'bold' }} />
-                        <Bar dataKey="Intento" stackId="a" fill="#EAB308" label={{ position: 'center', fill: '#fff', fontSize: 12, fontWeight: 'bold' }} />
-                        <Bar dataKey="Sin violencia" stackId="a" fill="#10B981" radius={[10, 10, 0, 0]} label={{ position: 'center', fill: '#fff', fontSize: 12, fontWeight: 'bold' }} />
+                        {/* Eliminamos stackId="a" y cambiamos la posición del label a 'top' para mejor visibilidad */}
+                        <Bar
+                            dataKey="Con violencia"
+                            fill="#D64545"
+                            radius={[6, 6, 0, 0]}
+                            label={{ position: 'top', fill: '#475569', fontSize: 10, fontWeight: 'bold' }}
+                        />
+                        <Bar
+                            dataKey="Intento"
+                            fill="#EAB308"
+                            radius={[6, 6, 0, 0]}
+                            label={{ position: 'top', fill: '#475569', fontSize: 10, fontWeight: 'bold' }}
+                        />
+                        <Bar
+                            dataKey="Sin violencia"
+                            fill="#10B981"
+                            radius={[6, 6, 0, 0]}
+                            label={{ position: 'top', fill: '#475569', fontSize: 10, fontWeight: 'bold' }}
+                        />
                     </BarChart>
                 </ResponsiveContainer>
             </div>

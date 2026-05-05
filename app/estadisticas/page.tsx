@@ -59,7 +59,7 @@ export default function PaginaEstadisticas() {
     }));
 
     // 4. Matriz de Violencia por Género (Actualizado para incluir 'Otros')
-    const dataViolence = ['Hombre', 'Mujer', 'Otros'].map(g => ({
+    const dataViolence = ['Hombre', 'Mujer', 'Otro'].map(g => ({
         genero: g,
         'Con violencia': safeReports.filter((r: any) => r.victimGender === g && r.incidentType === 'Con violencia o amenaza').length,
         'Sin violencia': safeReports.filter((r: any) => r.victimGender === g && r.incidentType === 'Sin violencia (no me di cuenta)').length,
