@@ -15,6 +15,8 @@ export default function Home() {
   const [lng, setLng] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [incidentType, setIncidentType] = useState('')
+
   const handleReset = () => {
     setLat(null)
     setLng(null)
@@ -39,7 +41,10 @@ export default function Home() {
 
     const reportData = {
       district: formData.get('district'),
-      incidentType: formData.get('incidentType'),
+      incidentType:
+        formData.get('incidentType') === 'Otros'
+          ? formData.get('incidentTypeOther')
+          : formData.get('incidentType'),
       stolenObject: formData.get('item'),
       victimGender: formData.get('gender'),
       lat: lat,
@@ -84,7 +89,7 @@ export default function Home() {
       {/* HEADER PRINCIPAL */}
       <header className="p-8 md:p-14 mb-4 max-w-5xl mx-auto">
         <div className="max-w-3xl mx-auto space-y-8">
-          <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700">
+          <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700 text-center">
             Construyendo el mapa de inseguridad
             <br />
             ciudadana – Iquitos (Punchana, San Juan
@@ -111,18 +116,6 @@ export default function Home() {
             <p>
               Se aceptan reportes desde el año 2000 hasta la actualidad (2026).
             </p>
-
-            <p>
-              Finalmente el mapa será compartido para que llegue hasta ti. Pero si quieres ver cómo va quedando el mapa puedes verlo aquí:
-            </p>
-
-            <a
-              href="https://bit.ly/mapa-inseguridad-iquitos"
-              target="_blank"
-              className="block text-emerald-600 font-bold underline hover:text-emerald-800"
-            >
-              https://bit.ly/mapa-inseguridad-iquitos
-            </a>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
               <span className="block">
@@ -172,7 +165,7 @@ export default function Home() {
 
             {/* DISTRITO */}
             <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Distrito *</label>
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide"> Distrito donde ocurrio la inseguridad ciudadana</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {['Iquitos', 'Punchana', 'San Juan', 'Belén'].map((d) => (
                   <label key={d} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer hover:bg-emerald-50 transition-colors">
@@ -185,28 +178,43 @@ export default function Home() {
 
             {/* TIPO DE HECHO */}
             <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Tipo de incidente *</label>
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">¿Qué tipo de hecho de inseguridad ocurrió?</label>
               <div className="space-y-2">
-                {['Con violencia o amenaza', 'Sin violencia (no me di cuenta)', 'Intento'].map((t) => (
+                {['Con violencia o amenaza', 'Sin violencia (no me di cuenta)', 'Intento (finalmente no ocurrió el hecho)', 'Otros'].map((t) => (
                   <label key={t} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer">
-                    <input type="radio" name="incidentType" value={t} required className="w-4 h-4 accent-emerald-700" />
+                    <input
+                      type="radio"
+                      name="incidentType"
+                      value={t}
+                      required
+                      onChange={() => setIncidentType(t)}
+                      className="w-4 h-4 accent-emerald-700"
+                    />
                     <span className="text-sm font-bold text-slate-600">{t}</span>
                   </label>
                 ))}
+                {incidentType === 'Otros' && (
+                  <input
+                    name="incidentTypeOther"
+                    placeholder="Especifica el tipo de incidente"
+                    className="w-full border-b-2 border-emerald-100 py-3 text-base outline-none focus:border-emerald-600 bg-transparent"
+                    required
+                  />
+                )}
               </div>
             </div>
 
             {/* OBJETO ROBADO */}
             <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Objeto sustraído (Celular, moto, etc.) *</label>
-              <input name="item" placeholder="Ej: Celular Samsung" required className="w-full border-b-2 border-emerald-100 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all" />
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">¿Qué objeto le robaron o hurtaron? (Celular, moto, etc.)</label>
+              <input name="item" placeholder="Ej: Celular Samsung" required className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all" />
             </div>
 
             {/* SEXO DE LA VÍCTIMA */}
             <div className="space-y-3">
               <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Sexo de la víctima *</label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {['Hombre', 'Mujer', 'Otro'].map((s) => (
+                {['Hombre', 'Mujer', 'Prefiero no decirlo'].map((s) => (
                   <label key={s} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer">
                     <input type="radio" name="gender" value={s} required className="w-4 h-4 accent-emerald-700" />
                     <span className="text-xs font-bold text-slate-600">{s}</span>
@@ -218,18 +226,18 @@ export default function Home() {
             {/* FECHA Y MOMENTO */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Fecha aproximada</label>
-                <input type="date" name="date" className="w-full md:w-1/2 border-b-2 border-emerald-100 py-2 outline-none focus:border-emerald-600 bg-transparent" />
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">¿Cuándo ocurrió? Si no recuerdas la fecha exacta, en la siguiente pregunta indica, si es posible, el mes o año.</label>
+                <input type="date" name="date" className="w-full md:w-1/2 border-b-2 border-slate-300 py-2 outline-none focus:border-emerald-600 bg-transparent transition-colors duration-300" />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-400 uppercase">Aclaración de fecha (opcional)</label>
-                <textarea name="dateHint" placeholder="Si no recuerda la fecha exacta, indique mes o año." className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm" rows={2} />
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Si no recuerda la fecha exacta quizas pueda indicar el mes y año, o el mes, o el año.</label>
+                <input name="datheHint" placeholder="Ej: Julio del 2025" required className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all" />
               </div>
             </div>
 
             {/* MOMENTO DEL DÍA */}
             <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Momento del día *</label>
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">¿En qué momento del día ocurrió?</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {['Mañana', 'Tarde', 'Noche', 'Madrugada'].map((m) => (
                   <label key={m} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer">
@@ -241,14 +249,14 @@ export default function Home() {
             </div>
 
             {/* EXTRAS */}
-            <div className="space-y-6 pt-6 border-t border-emerald-50">
+            <div className="space-y-6 pt-6 border-emerald-50">
               <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Descripción del hecho</label>
-                <textarea name="description" placeholder="Detalles adicionales..." className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm" rows={3} />
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Descripción breve del hecho (opcional)</label>
+                <input name="description" placeholder="Detalles adicionales..." className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Tu contacto para enviarte resultados (opcional)</label>
-                <input name="contact" placeholder="Email o Teléfono" className="w-full border-b-2 border-emerald-100 py-3 text-base outline-none focus:border-emerald-600 bg-transparent" />
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Si quieres que te comparta los resultados de esta investigación, por favor indícame alguna forma de contactarte.</label>
+                <input name="contact" placeholder="Email o Teléfono" className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent" />
               </div>
             </div>
 
@@ -270,16 +278,35 @@ export default function Home() {
         </form>
 
         {/* NAVEGACIÓN */}
-        <footer className="pt-10 border-t border-emerald-100 text-center space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
-            <button onClick={() => router.push('/mapa')} className="flex flex-col items-center gap-2 p-6 bg-white rounded-[2rem] border-2 border-emerald-50 hover:border-emerald-500 transition-all group">
-              <span className="text-3xl group-hover:scale-110 transition-transform">🗺️</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Ver Mapa</span>
-            </button>
-            <button onClick={() => router.push('/estadisticas')} className="flex flex-col items-center gap-2 p-6 bg-white rounded-[2rem] border-2 border-emerald-50 hover:border-emerald-500 transition-all group">
-              <span className="text-3xl group-hover:scale-110 transition-transform">📊</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900">Ver Estadísticas</span>
-            </button>
+        <footer className="pt-10 border-emerald-100 text-center space-y-10">
+          {/* RESULTADOS */}
+          <div className="pt-10 border-t border-emerald-100 space-y-6">
+            <h2 className="text-center text-xl font-extrabold text-slate-800 tracking-tight">
+              RESULTADOS
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+              <button
+                type='button'
+                onClick={() => window.open('https://bit.ly/mapa-inseguridad-iquitos', '_blank')}
+                className="flex flex-col items-center gap-2 p-6 bg-white rounded-[2rem] border-2 border-emerald-50 hover:border-emerald-500 transition-all group"
+              >
+                <span className="text-3xl group-hover:scale-110 transition-transform"></span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900">
+                  Ver Mapa
+                </span>
+              </button>
+
+              <button
+                onClick={() => router.push('/estadisticas')}
+                className="flex flex-col items-center gap-2 p-6 bg-white rounded-[2rem] border-2 border-emerald-50 hover:border-emerald-500 transition-all group"
+              >
+                <span className="text-3xl group-hover:scale-110 transition-transform"></span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900">
+                  Ver Estadísticas
+                </span>
+              </button>
+            </div>
           </div>
         </footer>
       </main>
