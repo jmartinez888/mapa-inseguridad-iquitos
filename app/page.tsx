@@ -72,7 +72,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-emerald-50/40 text-slate-900 pb-16 font-sans selection:bg-emerald-100">
+    <div className="min-h-screen bg-white text-slate-900 pb-16 font-sans selection:bg-emerald-100">
 
       {/* HEADER PRINCIPAL MODIFICADO */}
       <header className="p-8 md:p-14 mb-4 max-w-5xl mx-auto">
