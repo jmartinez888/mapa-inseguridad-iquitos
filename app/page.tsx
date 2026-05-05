@@ -79,7 +79,9 @@ export default function Home() {
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Cambiamos text-white por text-slate-900 para que se vea en el fondo claro */}
           <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700">
-            Construyendo el mapa de inseguridad ciudadana – Iquitos (Punchana, San Juan, Belén e Iquitos)
+            Construyendo el mapa de inseguridad ciudadana Iquitos
+            <br />
+            (Punchana, San Juan, Belén e Iquitos)
           </h1>
 
           {/* Cambiamos el fondo blanco/10 por un gris muy suave o transparente */}
@@ -91,29 +93,26 @@ export default function Home() {
             </p>
 
             {/* Cambiamos el color esmeralda claro por uno más oscuro para contraste */}
-            <p className="text-lg md:text-xl font-bold italic text-emerald-700">
-              Ayúdanos a mejorar la seguridad en nuestra ciudad creando un mapa de riesgo compartido.
-            </p>
-
-            <div className="pt-4 space-y-4 border-t border-slate-200 text-[13px] md:text-sm">
-              <p>
-                Se aceptan reportes desde el año 2000 hasta la actualidad (2026). Finalmente el mapa sera compartido para que llegue hasta ti. Pero si quieres ver como va quedando el mapa puedes ver aqui:
-                <a href="https://lookerstudio.google.com/reporting/118f92d8-16b9-4996-bd5a-1b7952b5d988" target="_blank" className="text-emerald-600 underline break-all ml-1 font-semibold hover:text-emerald-800">
-                  Resultados en Looker Studio
-                </a>
-              </p>
-
-              <p className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <p className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+              <span className="block">
                 Esta iniciativa está desarrollada por:
-                <a href="https://soilplantperu.com/" target="_blank" className="text-emerald-600 underline break-all ml-1 font-semibold hover:text-emerald-800">
+                <a
+                  href="https://soilplantperu.com/"
+                  target="_blank"
+                  className="text-emerald-600 underline ml-1 font-semibold hover:text-emerald-800"
+                >
                   Soil Plant
                 </a>
-                Si tienes dudas me puedes contactar <strong>+51 987189611 📱</strong>.
-              </p>
-            </div>
+              </span>
+
+              <span className="block">
+                Si tienes dudas me puedes contactar
+                <strong className="ml-1">+51 987189611 📱</strong>
+              </span>
+            </p>
           </div>
         </div>
-      </header>
+      </header >
       <main className="px-6 space-y-10 max-w-2xl mx-auto">
 
         <form onSubmit={handleSubmit} className="space-y-10">
@@ -242,6 +241,6 @@ export default function Home() {
           </div>
         </footer>
       </main>
-    </div>
+    </div >
   )
 }
