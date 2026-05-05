@@ -291,8 +291,8 @@ export default function Home() {
                 onClick={() => window.open('https://bit.ly/mapa-inseguridad-iquitos', '_blank')}
                 className="flex flex-col items-center gap-2 p-6 bg-white rounded-[2rem] border-2 border-emerald-50 hover:border-emerald-500 transition-all group"
               >
-                <span className="text-3xl group-hover:scale-110 transition-transform"></span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900">
+                <span className="text-3xl group-hover:scale-110 transition-transform">🗺️</span>
+                <span className="text-[14px] font-black uppercase tracking-widest text-emerald-900">
                   Ver Mapa
                 </span>
               </button>
@@ -301,8 +301,8 @@ export default function Home() {
                 onClick={() => router.push('/estadisticas')}
                 className="flex flex-col items-center gap-2 p-6 bg-white rounded-[2rem] border-2 border-emerald-50 hover:border-emerald-500 transition-all group"
               >
-                <span className="text-3xl group-hover:scale-110 transition-transform"></span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900">
+                <span className="text-3xl group-hover:scale-110 transition-transform">📊</span>
+                <span className="text-[14px] font-black uppercase tracking-widest text-emerald-900">
                   Ver Estadísticas
                 </span>
               </button>
