@@ -15,10 +15,17 @@ export default function Home() {
   const [lng, setLng] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const handleReset = () => {
+    setLat(null)
+    setLng(null)
+
+    const form = document.querySelector('form') as HTMLFormElement
+    if (form) form.reset()
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    // Referencia fija al formulario para evitar el error de 'null' en el reset
     const form = e.currentTarget;
 
     if (!lat || !lng) {
@@ -59,7 +66,7 @@ export default function Home() {
         alert('✅ Reporte registrado exitosamente en la base de datos.')
         setLat(null)
         setLng(null)
-        form.reset() // Uso de la referencia guardada
+        form.reset()
       } else {
         alert('❌ Error al guardar: ' + (result.error || 'Inténtalo de nuevo.'))
       }
@@ -74,28 +81,50 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white text-slate-900 pb-16 font-sans selection:bg-emerald-100">
 
-      {/* HEADER PRINCIPAL MODIFICADO */}
+      {/* HEADER PRINCIPAL */}
       <header className="p-8 md:p-14 mb-4 max-w-5xl mx-auto">
         <div className="max-w-3xl mx-auto space-y-8">
-          {/* Cambiamos text-white por text-slate-900 para que se vea en el fondo claro */}
           <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700">
             Construyendo el mapa de inseguridad
             <br />
-            ciudadana – Iquitos (Punchana, San
+            ciudadana – Iquitos (Punchana, San Juan
             <br />
             Juan, Belén e Iquitos)
           </h1>
 
-          {/* Cambiamos el fondo blanco/10 por un gris muy suave o transparente */}
           <div className="bg-slate-100/50 backdrop-blur-sm p-6 md:p-8 rounded-[2.5rem] border border-slate-200 space-y-5 text-sm md:text-base leading-relaxed text-slate-700">
+
             <p>
               Este formulario permite reportar hechos de inseguridad ciudadana en los distritos de
               <strong> Iquitos, San Juan Bautista, Belén y Punchana</strong>.
               La información registrada es anónima y será utilizada con fines de análisis y publicación científica.
             </p>
 
-            {/* Cambiamos el color esmeralda claro por uno más oscuro para contraste */}
-            <p className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+            <p className="font-semibold text-emerald-700">
+              Por favor, no olvides compartir en todas tus redes sociales.
+            </p>
+
+            <p>
+              Ayúdanos a mejorar la seguridad en nuestra ciudad y a construir un mapa de la inseguridad para cuidarnos mejor.
+            </p>
+
+            <p>
+              Se aceptan reportes desde el año 2000 hasta la actualidad (2026).
+            </p>
+
+            <p>
+              Finalmente el mapa será compartido para que llegue hasta ti. Pero si quieres ver cómo va quedando el mapa puedes verlo aquí:
+            </p>
+
+            <a
+              href="https://bit.ly/mapa-inseguridad-iquitos"
+              target="_blank"
+              className="block text-emerald-600 font-bold underline hover:text-emerald-800"
+            >
+              https://bit.ly/mapa-inseguridad-iquitos
+            </a>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
               <span className="block">
                 Esta iniciativa está desarrollada por:
                 <a
@@ -111,12 +140,16 @@ export default function Home() {
                 Si tienes dudas me puedes contactar
                 <strong className="ml-1">+51 987189611 📱</strong>
               </span>
-            </p>
+
+              <span className="block text-sm text-slate-500">
+                Para cualquier duda o comentario, no dudes en comunicarte.
+              </span>
+            </div>
           </div>
         </div>
-      </header >
-      <main className="px-6 space-y-10 max-w-2xl mx-auto">
+      </header>
 
+      <main className="px-6 space-y-10 max-w-2xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-10">
 
           {/* 1. UBICACIÓN */}
@@ -126,7 +159,7 @@ export default function Home() {
               <h2 className="font-extrabold text-slate-800 text-2xl">¿Dónde ocurrió el hecho?</h2>
             </div>
             <div className="bg-white rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl h-[380px] relative">
-              <MapPicker onLocationSelect={(la, lo) => { setLat(la); setLng(lo); }} />
+              <MapPicker onLocationSelect={(la: number, lo: number) => { setLat(la); setLng(lo); }} />
             </div>
           </section>
 
@@ -226,6 +259,13 @@ export default function Home() {
             >
               {isSubmitting ? 'GUARDANDO REPORTE...' : 'REGISTRAR MI REPORTE ANÓNIMO'}
             </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full bg-slate-200 text-slate-700 py-5 rounded-[2rem] text-lg font-black shadow hover:bg-slate-300 transition-all active:scale-95"
+            >
+              BORRAR FORMULARIO
+            </button>
           </section>
         </form>
 
@@ -243,6 +283,6 @@ export default function Home() {
           </div>
         </footer>
       </main>
-    </div >
+    </div>
   )
 }
