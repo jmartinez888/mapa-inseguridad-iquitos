@@ -79,9 +79,11 @@ export default function Home() {
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Cambiamos text-white por text-slate-900 para que se vea en el fondo claro */}
           <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700">
-            Construyendo el mapa de inseguridad ciudadana Iquitos
+            Construyendo el mapa de inseguridad
             <br />
-            (Punchana, San Juan, Belén e Iquitos)
+            ciudadana – Iquitos (Punchana, San
+            <br />
+            Juan, Belén e Iquitos)
           </h1>
 
           {/* Cambiamos el fondo blanco/10 por un gris muy suave o transparente */}
