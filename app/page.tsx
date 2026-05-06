@@ -49,12 +49,13 @@ export default function Home() {
       victimGender: formData.get('gender'),
       lat: lat,
       lng: lng,
-      exactDate: formData.get('date'),
-      approximateDate: formData.get('dateHint'),
+      incidentYear: formData.get('incidentYear'),
+      incidentMonth: formData.get('incidentMonth') || null, // Opcional
+      incidentDay: formData.get('incidentDay') || null,     // Opcional
       timeOfDay: formData.get('timeOfDay'),
       description: formData.get('description'),
       contactInfo: formData.get('contact'),
-    }
+    };
 
     try {
       const response = await fetch('/api/reports', {
@@ -235,29 +236,60 @@ export default function Home() {
               </div>
             </div>
 
-            {/* FECHA Y MOMENTO */}
+            {/* SECCIÓN DE FECHA UNIFICADA */}
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">¿Cuándo ocurrió? Si no recuerdas la fecha exacta, en la siguiente pregunta indica, si es posible, el mes o año.</label>
-                <input type="date" name="date" className="w-full md:w-1/2 border-b-2 border-slate-300 py-2 outline-none focus:border-emerald-600 bg-transparent transition-colors duration-300" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Si no recuerda la fecha exacta quizas pueda indicar el mes y año, o el mes, o el año.</label>
-                <input name="datheHint" placeholder="Ej: Julio del 2025" required className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all" />
-              </div>
-            </div>
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide block">
+                ¿Cuándo ocurrió el hecho?
+              </label>
 
-            {/* MOMENTO DEL DÍA */}
-            <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">¿En qué momento del día ocurrió?</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {['Mañana', 'Tarde', 'Noche', 'Madrugada'].map((m) => (
-                  <label key={m} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer">
-                    <input type="radio" name="timeOfDay" value={m} required className="w-4 h-4 accent-emerald-700" />
-                    <span className="text-xs font-bold text-slate-600">{m}</span>
-                  </label>
-                ))}
+              <div className="flex flex-col md:flex-row gap-4">
+                {/* AÑO - OBLIGATORIO */}
+                <div className="flex-1 space-y-2">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase">Año *</span>
+                  <select
+                    name="incidentYear"
+                    required
+                    className="w-full border-b-2 border-slate-300 py-2 outline-none focus:border-emerald-600 bg-transparent transition-colors appearance-none cursor-pointer font-medium"
+                  >
+                    <option value="">Selecciona el año</option>
+                    {Array.from({ length: 27 }, (_, i) => 2026 - i).map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* MES - OPCIONAL */}
+                <div className="flex-1 space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Mes (Opcional)</span>
+                  <select
+                    name="incidentMonth"
+                    className="w-full border-b-2 border-slate-300 py-2 outline-none focus:border-emerald-600 bg-transparent transition-colors appearance-none cursor-pointer font-medium"
+                  >
+                    <option value="">No recuerdo el mes</option>
+                    {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((mes, idx) => (
+                      <option key={mes} value={idx + 1}>{mes}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* DÍA - OPCIONAL */}
+                <div className="flex-1 space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Día (Opcional)</span>
+                  <select
+                    name="incidentDay"
+                    className="w-full border-b-2 border-slate-300 py-2 outline-none focus:border-emerald-600 bg-transparent transition-colors appearance-none cursor-pointer font-medium"
+                  >
+                    <option value="">No recuerdo el día</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
+
+              <p className="text-[11px] text-slate-400 italic">
+                * Solo el año es indispensable para el estudio científico.
+              </p>
             </div>
 
             {/* EXTRAS */}
