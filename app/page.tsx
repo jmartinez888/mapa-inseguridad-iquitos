@@ -84,8 +84,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb-16 font-sans selection:bg-emerald-100">
-
+    <div className="min-h-screen bg-[#d1e2d9] bg-[radial-gradient(circle_at_top_right,_#e8f5ee_0%,_#d1e2d9_50%,_#b8cdc2_100%)] text-slate-900 pb-16 font-sans selection:bg-emerald-100">
       {/* HEADER PRINCIPAL */}
       {/* HEADER PRINCIPAL */}
       {/* HEADER PRINCIPAL */}
@@ -109,7 +108,7 @@ export default function Home() {
           </h1>
         </div>
 
-        <div className="bg-slate-100/50 backdrop-blur-sm p-6 md:p-8 rounded-[2.5rem] border border-slate-200 space-y-5 text-sm md:text-base leading-relaxed text-slate-700">
+        <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-2 border-white/50 space-y-5 text-sm md:text-base leading-relaxed text-slate-700">
           <p className="text-justify">
             Este formulario permite reportar hechos de inseguridad ciudadana en los distritos de
             <strong> Iquitos, San Juan Bautista, Belén y Punchana</strong>.

@@ -67,7 +67,7 @@ export default function PaginaEstadisticas() {
     }));
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-12 font-sans text-slate-800">
+        <div className="min-h-screen bg-[#d1e2d9] bg-[radial-gradient(circle_at_top_right,_#e8f5ee_0%,_#d1e2d9_50%,_#b8cdc2_100%)] p-6 md:p-12 font-sans text-slate-800">
             <div className="max-w-7xl mx-auto space-y-10">
 
                 {/* Header de Ingeniería */}
