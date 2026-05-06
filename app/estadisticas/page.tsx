@@ -74,11 +74,8 @@ export default function PaginaEstadisticas() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
                         <h1 className="text-3xl font-black text-[#0F172A] tracking-tighter uppercase">
-                            Sistema de Análisis Criminalístico
+                            RESULTADOS DE LA ENCUESTA
                         </h1>
-                        <p className="text-[10px] font-bold text-slate-500 mt-1 tracking-[0.3em] uppercase">
-                            Mapa de Inseguridad Ciudadana • <span className="text-[#10B981]">Iquitos - Loreto</span>
-                        </p>
                     </div>
                     <button
                         onClick={() => router.push('/')}

@@ -1,5 +1,5 @@
 'use client'
-
+import Image from 'next/image'
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -87,60 +87,71 @@ export default function Home() {
     <div className="min-h-screen bg-white text-slate-900 pb-16 font-sans selection:bg-emerald-100">
 
       {/* HEADER PRINCIPAL */}
+      {/* HEADER PRINCIPAL */}
+      {/* HEADER PRINCIPAL */}
+
       <header className="p-8 md:p-14 mb-4 max-w-5xl mx-auto">
-        <div className="max-w-3xl mx-auto space-y-8">
-          <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700 text-center">
+
+        <div className="max-w-3xl mx-auto space-y-16">
+
+          <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700 text-center block mb-7">
+
             Construyendo el mapa de inseguridad
+
             <br />
+
             ciudadana – Iquitos (Punchana, San Juan
+
             <br />
+
             Juan, Belén e Iquitos)
+
           </h1>
+        </div>
 
-          <div className="bg-slate-100/50 backdrop-blur-sm p-6 md:p-8 rounded-[2.5rem] border border-slate-200 space-y-5 text-sm md:text-base leading-relaxed text-slate-700">
+        <div className="bg-slate-100/50 backdrop-blur-sm p-6 md:p-8 rounded-[2.5rem] border border-slate-200 space-y-5 text-sm md:text-base leading-relaxed text-slate-700">
+          <p className="text-justify">
+            Este formulario permite reportar hechos de inseguridad ciudadana en los distritos de
+            <strong> Iquitos, San Juan Bautista, Belén y Punchana</strong>.
+            La información registrada es anónima y será utilizada con fines de análisis y publicación científica.
+          </p>
 
-            <p>
-              Este formulario permite reportar hechos de inseguridad ciudadana en los distritos de
-              <strong> Iquitos, San Juan Bautista, Belén y Punchana</strong>.
-              La información registrada es anónima y será utilizada con fines de análisis y publicación científica.
-            </p>
+          {/* Cambio solicitado: Negrita, color esmeralda, pero tamaño y estilo de letra normal */}
+          <p className="font-bold text-emerald-700">
+            Por favor, no olvides compartir en todas tus redes sociales.
+          </p>
 
-            <p className="font-semibold text-emerald-700">
-              Por favor, no olvides compartir en todas tus redes sociales.
-            </p>
+          <p className="text-justify">
+            Ayúdanos a mejorar la seguridad en nuestra ciudad y a construir un mapa de la inseguridad para cuidarnos mejor.
+          </p>
 
-            <p>
-              Ayúdanos a mejorar la seguridad en nuestra ciudad y a construir un mapa de la inseguridad para cuidarnos mejor.
-            </p>
+          <p>
+            Se aceptan reportes desde el año 2000 hasta la actualidad (2026).
+          </p>
 
-            <p>
-              Se aceptan reportes desde el año 2000 hasta la actualidad (2026).
-            </p>
+          {/* CUADRO INTERNO DE CONTACTO */}
+          <div className="mt-6 space-y-3 text-sm md:text-base leading-relaxed text-slate-700">
+            <strong>Esta iniciativa está desarrollada por: </strong>
+            <a
+              href="https://soilplantperu.com/"
+              target="_blank"
+              className="text-emerald-600 underline ml-2 font-bold hover:text-emerald-800"
+            >
+              Soil Plant
+            </a>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-              <span className="block">
-                Esta iniciativa está desarrollada por:
-                <a
-                  href="https://soilplantperu.com/"
-                  target="_blank"
-                  className="text-emerald-600 underline ml-1 font-semibold hover:text-emerald-800"
-                >
-                  Soil Plant
-                </a>
-              </span>
 
-              <span className="block">
-                Si tienes dudas me puedes contactar
-                <strong className="ml-1">+51 987189611 📱</strong>
-              </span>
+            <span className="block font-semibold text-slate-800">
+              Si tienes dudas me puedes contactar
+              <strong className="ml-2 text-emerald-700">+51 987189611 📱</strong>
+            </span>
 
-              <span className="block text-sm text-slate-500">
-                Para cualquier duda o comentario, no dudes en comunicarte.
-              </span>
-            </div>
+            <span className="block text-xs text-slate-400 italic">
+              Para cualquier duda o comentario, no dudes en comunicarte.
+            </span>
           </div>
         </div>
-      </header>
+      </header >
 
       <main className="px-6 space-y-10 max-w-2xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-10">
@@ -157,11 +168,13 @@ export default function Home() {
           </section>
 
           {/* 2. DETALLES DEL INCIDENTE */}
+
+          {/* El encabezado ahora está fuera de la caja, igual que el punto 1 */}
+          <div className="flex items-center gap-5">
+            <span className="bg-emerald-700 text-white w-10 h-10 rounded-2xl flex items-center justify-center text-lg font-black shadow-lg">2</span>
+            <h2 className="font-extrabold text-slate-800 text-2xl tracking-tight">Detalles del Incidente</h2>
+          </div>
           <section className="bg-white p-8 md:p-10 rounded-[3rem] shadow-xl border border-emerald-50 space-y-8">
-            <div className="flex items-center gap-5 mb-4 border-b border-emerald-50 pb-6">
-              <span className="bg-emerald-700 text-white w-10 h-10 rounded-2xl flex items-center justify-center text-lg font-black shadow-lg">2</span>
-              <h2 className="font-extrabold text-slate-800 text-2xl tracking-tight">Detalles del Incidente</h2>
-            </div>
 
             {/* DISTRITO */}
             <div className="space-y-3">
@@ -310,6 +323,6 @@ export default function Home() {
           </div>
         </footer>
       </main>
-    </div>
+    </div >
   )
 }
