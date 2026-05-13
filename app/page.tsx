@@ -14,12 +14,39 @@ export default function Home() {
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
   const [incidentType, setIncidentType] = useState('')
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('')
 
+  const handleLocationSelect = async (la: number, lo: number) => {
+    setLat(la);
+    setLng(lo);
+
+    try {
+      // Llamada a la API de Nominatim (OpenStreetMap)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+
+      if (data.address) {
+        // Extraemos el nombre del lugar (suburb, city_district o town)
+        const rawDistrict = data.address.suburb || data.address.city_district || data.address.town || '';
+
+        // Lógica de limpieza para que coincida con tus opciones de Iquitos
+        if (rawDistrict.includes('Punchana')) setSelectedDistrict('Punchana');
+        else if (rawDistrict.includes('Belén')) setSelectedDistrict('Belén');
+        else if (rawDistrict.includes('San Juan')) setSelectedDistrict('San Juan');
+        else if (rawDistrict.includes('Iquitos')) setSelectedDistrict('Iquitos');
+      }
+    } catch (error) {
+      console.error("Error identificando el distrito:", error);
+    }
+  };
   const handleReset = () => {
     setLat(null)
     setLng(null)
+    setSelectedDistrict('') // ✅ Limpia el distrito al resetear
+    setIncidentType('')
 
     const form = document.querySelector('form') as HTMLFormElement
     if (form) form.reset()
@@ -40,7 +67,7 @@ export default function Home() {
     const formData = new FormData(form)
 
     const reportData = {
-      district: formData.get('district'),
+      district: selectedDistrict,
       incidentType:
         formData.get('incidentType') === 'Otros'
           ? formData.get('incidentTypeOther')
@@ -100,11 +127,9 @@ export default function Home() {
 
             <br />
 
-            ciudadana – Iquitos (Punchana, San Juan
+            ciudadana del Perú
 
             <br />
-
-            Juan, Belén e Iquitos)
 
           </h1>
         </div>
@@ -118,15 +143,11 @@ export default function Home() {
 
           {/* Cambio solicitado: Negrita, color esmeralda, pero tamaño y estilo de letra normal */}
           <p className="font-bold text-emerald-700">
-            Por favor, no olvides compartir en todas tus redes sociales.
+            Por favor comparte en todas tus redes sociales
           </p>
 
           <p className="text-justify">
-            Ayúdanos a mejorar la seguridad en nuestra ciudad y a construir un mapa de la inseguridad para cuidarnos mejor.
-          </p>
-
-          <p>
-            Se aceptan reportes desde el año 2000 hasta la actualidad (2026).
+            Se aceptan reportes desde el año 2000 hasta la actualidad (2026). El mapa será compartido para que llegue hasta ti.
           </p>
 
           {/* CUADRO INTERNO DE CONTACTO */}
@@ -142,8 +163,8 @@ export default function Home() {
 
 
             <span className="block font-semibold text-slate-800">
-              Si tienes dudas me puedes contactar
-              <strong className="ml-2 text-emerald-700">+51 987189611 📱</strong>
+              Dudas:
+              <strong className="ml-2 text-emerald-700">+51 987189611 / soilplant@soilplantperu.com</strong>
             </span>
 
             <span className="block text-xs text-slate-400 italic">
@@ -163,7 +184,7 @@ export default function Home() {
               <h2 className="font-extrabold text-slate-800 text-2xl">¿Dónde ocurrió el hecho?</h2>
             </div>
             <div className="bg-white rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl h-[380px] relative">
-              <MapPicker onLocationSelect={(la: number, lo: number) => { setLat(la); setLng(lo); }} />
+              <MapPicker onLocationSelect={handleLocationSelect} />
             </div>
           </section>
 
@@ -176,14 +197,27 @@ export default function Home() {
           </div>
           <section className="bg-white p-8 md:p-10 rounded-[3rem] shadow-xl border border-emerald-50 space-y-8">
 
-            {/* DISTRITO */}
+            {/* DISTRITO (Sincronizado con el mapa) */}
             <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide"> Distrito donde ocurrio la inseguridad ciudadana</label>
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">
+                Distrito donde ocurrió la inseguridad ciudadana
+              </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {['Iquitos', 'Punchana', 'San Juan', 'Belén'].map((d) => (
-                  <label key={d} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer hover:bg-emerald-50 transition-colors">
-                    <input type="radio" name="district" value={d} required className="w-4 h-4 accent-emerald-700" />
-                    <span className="text-sm font-bold text-slate-600">{d}</span>
+                  <label key={d} className={`flex items-center gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${selectedDistrict === d ? 'bg-emerald-100 border-emerald-500 shadow-md' : 'bg-emerald-50/30 border-emerald-100'}`}>
+                    <input
+                      type="radio"
+                      name="district"
+                      value={d}
+                      required
+                      // Esta es la clave: se marca si el estado coincide
+                      checked={selectedDistrict === d}
+                      onChange={(e) => setSelectedDistrict(e.target.value)}
+                      className="w-4 h-4 accent-emerald-700"
+                    />
+                    <span className={`text-sm font-bold ${selectedDistrict === d ? 'text-emerald-900' : 'text-slate-600'}`}>
+                      {d}
+                    </span>
                   </label>
                 ))}
               </div>
