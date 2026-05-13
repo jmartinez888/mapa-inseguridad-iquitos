@@ -5,14 +5,14 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import L, { type LeafletMouseEvent } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Configuración de iconos para evitar errores de carga en Next.js
-const customIcon = new L.Icon({
+//iconos en Next.js
+const customIcon = typeof window !== 'undefined' ? new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
-})
+}) : undefined;
 
 const DEFAULT_CENTER: [number, number] = [-3.7491, -73.2538]
 
@@ -24,9 +24,12 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
   const [position, setPosition] = useState<[number, number] | null>(null)
   const [isMounted, setIsMounted] = useState(false)
 
-  // Aseguramos que el componente solo se cargue en el cliente
   useEffect(() => {
     setIsMounted(true)
+    // Limpieza al desmontar para evitar el error "Map container is being reused"
+    return () => {
+      setIsMounted(false)
+    }
   }, [])
 
   function LocationMarker() {
@@ -49,12 +52,11 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
   return (
     <div className="h-full w-full relative">
       <MapContainer
-        key="iquitos-security-map" // Key pasada directamente como prop
+        key="map-container-iquitos"
         center={DEFAULT_CENTER}
         zoom={13}
         scrollWheelZoom={true}
         className="h-full w-full rounded-2xl"
-        style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

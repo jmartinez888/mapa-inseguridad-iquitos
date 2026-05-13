@@ -1,6 +1,7 @@
 'use client'
-import Image from 'next/image'
-import { useState } from 'react'
+
+
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 
@@ -11,15 +12,60 @@ const MapPicker = dynamic(() => import('@/components/MapPicker'), {
 
 export default function Home() {
   const router = useRouter()
+  const [selectedProvince, setSelectedProvince] = useState<string>('')
+  const [selectedState, setSelectedState] = useState<string>('')
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
   const [incidentType, setIncidentType] = useState('')
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('')
+  const [timeOfDay, setTimeOfDay] = useState<string>('')
+  const [mobility, setMobility] = useState<string>('')
+  const [economicImpact, setEconomicImpact] = useState<string>('')
 
+  const handleLocationSelect = async (la: number, lo: number) => {
+    setLat(la);
+    setLng(lo);
+
+    try {
+      // Llamada a la API de Nominatim (OpenStreetMap)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+
+      if (data.address) {
+        const addressString = Object.values(data.address).join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        // Buscamos coincidencias más amplias
+        // PUNTO 2: Detección mejorada para Iquitos y distritos
+        if (addressString.includes('punchana')) {
+          setSelectedDistrict('Punchana');
+        } else if (addressString.includes('belen')) {
+          setSelectedDistrict('Belén');
+        } else if (addressString.includes('san juan')) {
+          setSelectedDistrict('San Juan');
+        } else if (addressString.includes('iquitos')) {
+          setSelectedDistrict('Iquitos');
+        } else {
+          setSelectedDistrict('Zona no identificada');
+        }
+        // Provincia (usando state_district como respaldo)
+        setSelectedProvince(data.address.county || data.address.state_district || 'Maynas');
+        setSelectedState(data.address.state || 'Loreto');
+      }
+    } catch (error) {
+      console.error("Error identificando el distrito:", error);
+    }
+  };
   const handleReset = () => {
     setLat(null)
     setLng(null)
+    setSelectedDistrict('') // ✅ Limpia el distrito al resetear
+    setIncidentType('')
+    setTimeOfDay('')
+    setMobility('') // ✅ Limpiar movilidad
+    setEconomicImpact('') // ✅ Limpiar impacto
 
     const form = document.querySelector('form') as HTMLFormElement
     if (form) form.reset()
@@ -40,7 +86,7 @@ export default function Home() {
     const formData = new FormData(form)
 
     const reportData = {
-      district: formData.get('district'),
+      district: selectedDistrict,
       incidentType:
         formData.get('incidentType') === 'Otros'
           ? formData.get('incidentTypeOther')
@@ -49,10 +95,12 @@ export default function Home() {
       victimGender: formData.get('gender'),
       lat: lat,
       lng: lng,
-      incidentYear: formData.get('incidentYear'),
-      incidentMonth: formData.get('incidentMonth') || null, // Opcional
-      incidentDay: formData.get('incidentDay') || null,     // Opcional
+      incidentYear: parseInt(formData.get('incidentYear') as string),
+      incidentMonth: formData.get('incidentMonth') ? parseInt(formData.get('incidentMonth') as string) : null,
+      incidentDay: formData.get('incidentDay') ? parseInt(formData.get('incidentDay') as string) : null,
       timeOfDay: formData.get('timeOfDay'),
+      mobility: formData.get('mobility'), // ✅ Nuevo campo
+      economicImpact: formData.get('economicImpact'), // ✅ Nuevo campo
       description: formData.get('description'),
       contactInfo: formData.get('contact'),
     };
@@ -100,11 +148,9 @@ export default function Home() {
 
             <br />
 
-            ciudadana – Iquitos (Punchana, San Juan
+            ciudadana del Perú
 
             <br />
-
-            Juan, Belén e Iquitos)
 
           </h1>
         </div>
@@ -118,15 +164,11 @@ export default function Home() {
 
           {/* Cambio solicitado: Negrita, color esmeralda, pero tamaño y estilo de letra normal */}
           <p className="font-bold text-emerald-700">
-            Por favor, no olvides compartir en todas tus redes sociales.
+            Por favor comparte en todas tus redes sociales
           </p>
 
           <p className="text-justify">
-            Ayúdanos a mejorar la seguridad en nuestra ciudad y a construir un mapa de la inseguridad para cuidarnos mejor.
-          </p>
-
-          <p>
-            Se aceptan reportes desde el año 2000 hasta la actualidad (2026).
+            Se aceptan reportes desde el año 2000 hasta la actualidad (2026). El mapa será compartido para que llegue hasta ti.
           </p>
 
           {/* CUADRO INTERNO DE CONTACTO */}
@@ -142,8 +184,8 @@ export default function Home() {
 
 
             <span className="block font-semibold text-slate-800">
-              Si tienes dudas me puedes contactar
-              <strong className="ml-2 text-emerald-700">+51 987189611 📱</strong>
+              Dudas:
+              <strong className="ml-2 text-emerald-700">+51 987189611 / soilplant@soilplantperu.com</strong>
             </span>
 
             <span className="block text-xs text-slate-400 italic">
@@ -163,9 +205,20 @@ export default function Home() {
               <h2 className="font-extrabold text-slate-800 text-2xl">¿Dónde ocurrió el hecho?</h2>
             </div>
             <div className="bg-white rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl h-[380px] relative">
-              <MapPicker onLocationSelect={(la: number, lo: number) => { setLat(la); setLng(lo); }} />
+              <MapPicker onLocationSelect={handleLocationSelect} />
             </div>
           </section>
+          {/* Debajo de la sección 1 (Mapa) o dentro de la sección 2 */}
+          {(selectedDistrict || selectedProvince) && (
+            <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-2xl mb-6 animate-in fade-in slide-in-from-left-2">
+              <p className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-1">Ubicación Detectada:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <p className="text-sm"><strong>Distrito:</strong> {selectedDistrict || 'No detectado'}</p>
+                <p className="text-sm"><strong>Provincia:</strong> {selectedProvince}</p>
+                <p className="text-sm"><strong>Departamento:</strong> {selectedState}</p>
+              </div>
+            </div>
+          )}
 
           {/* 2. DETALLES DEL INCIDENTE */}
 
@@ -176,56 +229,68 @@ export default function Home() {
           </div>
           <section className="bg-white p-8 md:p-10 rounded-[3rem] shadow-xl border border-emerald-50 space-y-8">
 
-            {/* DISTRITO */}
-            <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide"> Distrito donde ocurrio la inseguridad ciudadana</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {['Iquitos', 'Punchana', 'San Juan', 'Belén'].map((d) => (
-                  <label key={d} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer hover:bg-emerald-50 transition-colors">
-                    <input type="radio" name="district" value={d} required className="w-4 h-4 accent-emerald-700" />
-                    <span className="text-sm font-bold text-slate-600">{d}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
 
             {/* TIPO DE HECHO */}
             <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">¿Qué tipo de hecho de inseguridad ocurrió?</label>
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">
+                ¿Qué tipo de hecho de inseguridad ocurrió? [Obligado]
+              </label>
               <div className="space-y-2">
-                {['Con violencia o amenaza', 'Sin violencia (no me di cuenta)', 'Intento (finalmente no ocurrió el hecho)', 'Otros'].map((t) => (
-                  <label key={t} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer">
+                {[
+                  'Robo con violencia o amenaza',
+                  'Hurto (sin que me diera cuenta)',
+                  'Extorsión o amenaza',
+                  'Secuestro',
+                  'Estafa o fraude',
+                  'Acoso u ofensa sexual',
+                  'Maltrato físico o psicológico',
+                  'Intento (no se consumó el hecho)',
+                  'Otro'
+                ].map((t) => (
+                  <label key={t} className={`flex items-center gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${incidentType === t ? 'bg-emerald-100 border-emerald-500' : 'bg-emerald-50/30 border-emerald-100'}`}>
                     <input
                       type="radio"
                       name="incidentType"
                       value={t}
                       required
                       onChange={() => setIncidentType(t)}
+                      checked={incidentType === t}
                       className="w-4 h-4 accent-emerald-700"
                     />
-                    <span className="text-sm font-bold text-slate-600">{t}</span>
+                    <span className={`text-sm font-bold ${incidentType === t ? 'text-emerald-900' : 'text-slate-600'}`}>{t}</span>
                   </label>
                 ))}
-                {incidentType === 'Otros' && (
+
+                {/* Campo dinámico para "Otro" */}
+                {incidentType === 'Otro' && (
                   <input
                     name="incidentTypeOther"
                     placeholder="Especifica el tipo de incidente"
-                    className="w-full border-b-2 border-emerald-100 py-3 text-base outline-none focus:border-emerald-600 bg-transparent"
+                    className="w-full border-b-2 border-emerald-600 py-3 text-base outline-none bg-transparent animate-in fade-in slide-in-from-top-1"
                     required
                   />
                 )}
               </div>
             </div>
 
-            {/* OBJETO ROBADO */}
-            <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">¿Qué objeto le robaron o hurtaron? (Celular, moto, etc.)</label>
-              <input name="item" placeholder="Ej: Celular Samsung" required className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all" />
-            </div>
+            {/* OBJETO ROBADO - Se muestra solo si es Robo o Hurto */}
+            {(incidentType === 'Robo con violencia o amenaza' || incidentType === 'Hurto (sin que me diera cuenta)') && (
+              <div className="space-y-3 animate-in zoom-in-95 duration-300">
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">
+                  ¿Qué objeto le robaron o hurtaron? *
+                </label>
+                <input
+                  name="item"
+                  placeholder="Ej: Celular Samsung, Motocicleta Honda, Billetera"
+                  required
+                  className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all"
+                />
+              </div>
+            )}
 
             {/* SEXO DE LA VÍCTIMA */}
             <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Sexo de la víctima *</label>
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Sexo de la víctima [Obligado] </label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {['Hombre', 'Mujer', 'Prefiero no decirlo'].map((s) => (
                   <label key={s} className="flex items-center gap-3 p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl cursor-pointer">
@@ -239,7 +304,9 @@ export default function Home() {
             {/* SECCIÓN DE FECHA UNIFICADA */}
             <div className="space-y-4">
               <label className="text-sm font-black text-slate-700 uppercase tracking-wide block">
-                ¿Cuándo ocurrió el hecho?
+
+                ¿Cuándo ocurrió? [Opcional] Si no recuerdas la fecha exacta, indica el mes o año
+
               </label>
 
               <div className="flex flex-col md:flex-row gap-4">
@@ -291,6 +358,112 @@ export default function Home() {
                 * Solo el año es indispensable para el estudio científico.
               </p>
             </div>
+            {/* MOMENTO DEL DÍA */}
+            <div className="space-y-3">
+              <label className="text-sm font-black text-slate-700 uppercase tracking-wide">
+                ¿En qué momento del día ocurrió? [Obligado]
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {['Mañana', 'Tarde', 'Noche', 'Madrugada', 'No recuerdo'].map((m) => (
+                  <label
+                    key={m}
+                    className={`flex items-center gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${timeOfDay === m ? 'bg-emerald-100 border-emerald-500 shadow-sm' : 'bg-emerald-50/30 border-emerald-100'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="timeOfDay"
+                      value={m}
+                      required
+                      checked={timeOfDay === m}
+                      onChange={(e) => setTimeOfDay(e.target.value)}
+                      className="w-4 h-4 accent-emerald-700"
+                    />
+                    <span className={`text-xs font-bold ${timeOfDay === m ? 'text-emerald-900' : 'text-slate-600'}`}>
+                      {m}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {/* 3. MOVILIDAD Y IMPACTO ECONÓMICO */}
+            <div className="space-y-8">
+              {/* MOVILIDAD */}
+              <div className="space-y-3">
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">
+                  ¿Cómo se movilizaba cuando ocurrió el hecho? [Obligado]
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    'A pie',
+                    'En mototaxi',
+                    'En moto propia',
+                    'En auto propio',
+                    'En transporte público (bus, combi)',
+                    'En taxi / aplicativo',
+                    'No recuerdo'
+                  ].map((m) => (
+                    <label
+                      key={m}
+                      className={`flex items-center gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${mobility === m
+                        ? 'bg-emerald-100 border-emerald-500 shadow-sm'
+                        : 'bg-emerald-50/30 border-emerald-100'
+                        }`}
+                    >
+                      <input
+                        type="radio"
+                        name="mobility"
+                        value={m}
+                        required
+                        checked={mobility === m}
+                        onChange={(e) => setMobility(e.target.value)} // ✅ Ahora sí está definido
+                        className="w-4 h-4 accent-emerald-700"
+                      />
+                      <span className={`text-sm font-bold ${mobility === m ? 'text-emerald-900' : 'text-slate-600'}`}>
+                        {m}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* IMPACTO ECONÓMICO */}
+              <div className="space-y-3">
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">
+                  ¿Cuál fue el impacto económico aproximado? [Obligado]
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    'Menos de S/ 100',
+                    'Entre S/ 100 y S/ 500',
+                    'Entre S/ 500 y S/ 2,000',
+                    'Más de S/ 2,000',
+                    'No hubo pérdida económica',
+                    'No recuerdo'
+                  ].map((i) => (
+                    <label
+                      key={i}
+                      className={`flex items-center gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${economicImpact === i
+                        ? 'bg-emerald-100 border-emerald-500 shadow-sm'
+                        : 'bg-emerald-50/30 border-emerald-100'
+                        }`}
+                    >
+                      <input
+                        type="radio"
+                        name="economicImpact"
+                        value={i}
+                        required
+                        checked={economicImpact === i}
+                        onChange={(e) => setEconomicImpact(e.target.value)} // ✅ Ahora sí está definido
+                        className="w-4 h-4 accent-emerald-700"
+                      />
+                      <span className={`text-sm font-bold ${economicImpact === i ? 'text-emerald-900' : 'text-slate-600'}`}>
+                        {i}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* EXTRAS */}
             <div className="space-y-6 pt-6 border-emerald-50">
@@ -299,7 +472,7 @@ export default function Home() {
                 <input name="description" placeholder="Detalles adicionales..." className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Si quieres que te comparta los resultados de esta investigación, por favor indícame alguna forma de contactarte.</label>
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">9.	Si quieres recibir los resultados de esta investigación, indícanos cómo contactarte [Opcional]</label>
                 <input name="contact" placeholder="Email o Teléfono" className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent" />
               </div>
             </div>
@@ -313,7 +486,11 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={handleReset}
+              onClick={() => {
+                handleReset();
+                setTimeOfDay(''); // ✅ Limpia el estado visual
+                setIncidentType(''); // ✅ Limpia el estado visual
+              }}
               className="w-full bg-slate-200 text-slate-700 py-5 rounded-[2rem] text-lg font-black shadow hover:bg-slate-300 transition-all active:scale-95"
             >
               BORRAR FORMULARIO

@@ -17,10 +17,10 @@ export async function POST(req: Request) {
       data: {
         district: data.district,
         incidentType: data.incidentType,
-        stolenObject: data.stolenObject,
+        stolenObject: data.stolenObject || null,
         victimGender: data.victimGender,
-        latitude: parseFloat(data.lat), // 👈 Aseguramos que sea número
-        longitude: parseFloat(data.lng), // 👈 Aseguramos que sea número
+        latitude: parseFloat(data.latitude || data.lat),
+        longitude: parseFloat(data.longitude || data.lng),
         exactDate: data.exactDate ? new Date(data.exactDate) : null,
         approximateDate: data.approximateDate || null,
         timeOfDay: data.timeOfDay,
