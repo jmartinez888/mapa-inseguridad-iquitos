@@ -11,7 +11,7 @@ model IncidentReport {
   id              String   @id @default(uuid())
   district        String
   incidentType    String
-  stolenObject    String
+  stolenObject    String?
   victimGender    String
 
   latitude        Float
