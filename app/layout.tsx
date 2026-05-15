@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mapa de Inseguridad - Iquitos",
+  title: "Mapa de Inseguridad Ciudadana - Perú",
   description: "Plataforma de reporte ciudadano anónimo para Iquitos, Punchana, Belén y San Juan.",
   icons: {
     icon: "/icono.png?v=1", // <-- Agrega este parámetro de versión aquí

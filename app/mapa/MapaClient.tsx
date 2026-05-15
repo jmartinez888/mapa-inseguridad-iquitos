@@ -87,7 +87,7 @@ function FullscreenControl() {
 export default function MapaClient() {
     const [data, setData] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
-    const CENTER: LatLngExpression = [-3.7491, -73.2538]; // Centro: Iquitos
+    const CENTER: LatLngExpression = [-9.19, -75.01]; // Centro: Iquitos
 
     useEffect(() => {
         // Sincronización con la API de Neon (Ruta en plural)
@@ -125,7 +125,7 @@ export default function MapaClient() {
                 <MapContainer
                     {...({
                         center: CENTER,
-                        zoom: 13,
+                        zoom: 6,
                         scrollWheelZoom: true,
                         className: "h-full w-full"
                     } as any)}
@@ -170,7 +170,7 @@ export default function MapaClient() {
                     <div className="absolute top-6 right-6 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-3">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
                         <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
-                            Sincronizando Iquitos...
+                            Sincronizando reportes nacionales...
                         </span>
                     </div>
                 )}
