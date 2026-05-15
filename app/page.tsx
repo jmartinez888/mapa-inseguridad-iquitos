@@ -28,36 +28,48 @@ export default function Home() {
     setLng(lo);
 
     try {
-      // Llamada a la API de Nominatim (OpenStreetMap)
+      // Llamada a la API de Nominatim
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=18&addressdetails=1`
       );
       const data = await response.json();
 
       if (data.address) {
-        const addressString = Object.values(data.address).join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const addr = data.address;
+        const addressString = Object.values(addr)
+          .join(' ')
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
 
-        // Buscamos coincidencias más amplias
-        // PUNTO 2: Detección mejorada para Iquitos y distritos
-        if (addressString.includes('punchana')) {
-          setSelectedDistrict('Punchana');
-        } else if (addressString.includes('belen')) {
-          setSelectedDistrict('Belén');
-        } else if (addressString.includes('san juan')) {
-          setSelectedDistrict('San Juan');
-        } else if (addressString.includes('iquitos')) {
-          setSelectedDistrict('Iquitos');
-        } else {
-          setSelectedDistrict('Zona no identificada');
+        // 1. DISTRITO
+        const apiDistrict = addr.village || addr.suburb || addr.town || addr.city_district || addr.city;
+
+        if (addressString.includes('punchana')) setSelectedDistrict('Punchana');
+        else if (addressString.includes('belen')) setSelectedDistrict('Belén');
+        else if (addressString.includes('san juan')) setSelectedDistrict('San Juan');
+        else if (addressString.includes('iquitos')) setSelectedDistrict('Iquitos');
+        else setSelectedDistrict(apiDistrict || 'Zona no identificada');
+
+        // 2. PROVINCIA (Optimizado para Maynas y resto de Perú)
+        let province = addr.county || addr.state_district;
+
+        if (!province && (addressString.includes('iquitos') || addressString.includes('maynas'))) {
+          province = 'Maynas';
         }
-        // Provincia (usando state_district como respaldo)
-        setSelectedProvince(data.address.county || data.address.state_district || 'Maynas');
-        setSelectedState(data.address.state || 'Loreto');
+
+        setSelectedProvince(province || 'Provincia no detectada');
+
+        // 3. DEPARTAMENTO
+        setSelectedState(addr.state || addr.region || 'Departamento no detectado');
       }
     } catch (error) {
-      console.error("Error identificando el distrito:", error);
+      // Este bloque es necesario para cerrar el try y manejar errores
+      console.error("Error identificando la ubicación:", error);
+      setSelectedDistrict('Error al detectar');
+      setSelectedProvince('Error al detectar');
     }
-  };
+  }; // <--- Ahora este cierre funcionará correctamente
   const handleReset = () => {
     setLat(null)
     setLng(null)
