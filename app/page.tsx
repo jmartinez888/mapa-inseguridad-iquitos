@@ -169,12 +169,12 @@ export default function Home() {
 
         <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-2 border-white/50 space-y-5 text-sm md:text-base leading-relaxed text-slate-700">
           <p className="text-justify">
-            Este formulario permite reportar hechos de inseguridad ciudadana en los distritos de
-            <strong> Iquitos, San Juan Bautista, Belén y Punchana</strong>.
-            La información registrada es anónima y será utilizada con fines de análisis y publicación científica.
+            Este formulario permite reportar hechos de inseguridad ciudadana en <strong>todo el Perú</strong>.
+            La información registrada es anónima y será utilizada con fines de análisis, <strong>visualización geográfica y publicación científica</strong>.
+            Los reportes ayudarán a identificar patrones delictivos, zonas de riesgo y problemáticas recurrentes, contribuyendo a la generación de evidencia para la prevención y el fortalecimiento de la seguridad ciudadana.
+            Tu participación es importante para construir un mapa colaborativo y actualizado de la inseguridad en el país.
           </p>
 
-          {/* Cambio solicitado: Negrita, color esmeralda, pero tamaño y estilo de letra normal */}
           <p className="font-bold text-emerald-700">
             Por favor comparte en todas tus redes sociales
           </p>
@@ -193,8 +193,6 @@ export default function Home() {
             >
               Soil Plant
             </a>
-
-
             <span className="block font-semibold text-slate-800">
               Dudas:
               <strong className="ml-2 text-emerald-700">+51 987189611 / soilplant@soilplantperu.com</strong>
@@ -484,7 +482,7 @@ export default function Home() {
                 <input name="description" placeholder="Detalles adicionales..." className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">9.	Si quieres recibir los resultados de esta investigación, indícanos cómo contactarte [Opcional]</label>
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">Si quieres recibir los resultados de esta investigación, indícanos cómo contactarte [Opcional]</label>
                 <input name="contact" placeholder="Email o Teléfono" className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent" />
               </div>
             </div>

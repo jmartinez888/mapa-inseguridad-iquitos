@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L, { type LeafletMouseEvent } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-//iconos en Next.js
+// --- CONFIGURACIÓN DE ICONOS ---
 const customIcon = typeof window !== 'undefined' ? new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -14,10 +14,21 @@ const customIcon = typeof window !== 'undefined' ? new L.Icon({
   iconAnchor: [12, 41],
 }) : undefined;
 
-const DEFAULT_CENTER: [number, number] = [-3.7491, -73.2538]
+// --- CONFIGURACIÓN NACIONAL ---
+const PERU_CENTER: [number, number] = [-9.19, -75.01]
+const INITIAL_ZOOM = 5
 
 type MapPickerProps = {
   onLocationSelect: (lat: number, lng: number) => void
+}
+
+// --- COMPONENTE PARA FORZAR VISTA (Solución al error useMap) ---
+function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
+  const map = useMap(); // Ahora sí está importado arriba
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
 }
 
 export default function MapPicker({ onLocationSelect }: MapPickerProps) {
@@ -26,7 +37,6 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
 
   useEffect(() => {
     setIsMounted(true)
-    // Limpieza al desmontar para evitar el error "Map container is being reused"
     return () => {
       setIsMounted(false)
     }
@@ -41,7 +51,6 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
       },
     })
 
-    // Pasamos las props de forma directa y limpia
     return position ? (
       <Marker position={position} icon={customIcon} />
     ) : null;
@@ -52,12 +61,15 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
   return (
     <div className="h-full w-full relative">
       <MapContainer
-        key="map-container-iquitos"
-        center={DEFAULT_CENTER}
-        zoom={13}
+        key="map-picker-nacional-peru"
+        center={PERU_CENTER}
+        zoom={INITIAL_ZOOM}
         scrollWheelZoom={true}
         className="h-full w-full rounded-2xl"
       >
+        {/* FUERZA LA VISTA AL CARGAR EL FORMULARIO */}
+        <ChangeView center={PERU_CENTER} zoom={INITIAL_ZOOM} />
+
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
