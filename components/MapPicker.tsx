@@ -16,7 +16,7 @@ const customIcon = typeof window !== 'undefined' ? new L.Icon({
 
 // --- CONFIGURACIÓN NACIONAL ---
 const PERU_CENTER: [number, number] = [-9.19, -75.01]
-const INITIAL_ZOOM = 5
+const INITIAL_ZOOM = 4
 
 type MapPickerProps = {
   onLocationSelect: (lat: number, lng: number) => void
