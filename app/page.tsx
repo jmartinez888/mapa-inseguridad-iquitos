@@ -41,7 +41,7 @@ export default function Home() {
           .toLowerCase()
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
-
+         
         // 1. DISTRITO
         const apiDistrict = addr.village || addr.suburb || addr.town || addr.city_district || addr.city;
 
@@ -51,14 +51,64 @@ export default function Home() {
         else if (addressString.includes('iquitos')) setSelectedDistrict('Iquitos');
         else setSelectedDistrict(apiDistrict || 'Zona no identificada');
 
-        // 2. PROVINCIA (Optimizado para Maynas y resto de Perú)
-        let province = addr.county || addr.state_district;
+       // =========================================================================
+// 2. PROVINCIA (SISTEMA DE DETECCIÓN UNIVERSAL PARA TODO EL PERÚ)
+// =========================================================================
+// Intento 1: Buscar en las etiquetas estructuradas normales de la API
+let province = addr.state_district || addr.county;
 
-        if (!province && (addressString.includes('iquitos') || addressString.includes('maynas'))) {
-          province = 'Maynas';
-        }
+// Intento 2: Si la API no la detectó de forma estructurada (común en zonas rurales)
+if (!province && data.display_name) {
+  // Limpiamos el texto completo de la dirección (quitamos acentos y pasamos a minúsculas)
+  const fullText = data.display_name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
-        setSelectedProvince(province || 'Provincia no detectada');
+  // Creamos un array separando los elementos por comas (ej: ["rinconazo", "lambayeque", "chiclayo", "peru"])
+ // Forzamos a que TypeScript sepa que display_name es un string usando (data.display_name as string)
+const addressParts = (data.display_name as string).split(',').map((part: string) => part.trim());
+
+  // En el formato de OpenStreetMap para Perú:
+  // Si miramos de atrás hacia adelante: [..., Provincia, Departamento/Región, Perú]
+  if (addressParts.length >= 3) {
+    // El último elemento es "Perú" (índice length - 1)
+    // El penúltimo suele ser el Departamento o Región (índice length - 2)
+    // El antepenúltimo suele ser la Provincia exacta (índice length - 3)
+    const potentialProvince = addressParts[addressParts.length - 3];
+    
+    // Filtro de seguridad: Evitamos que confunda el número de carretera o código postal con la provincia
+    if (potentialProvince && !/\d/.test(potentialProvince) && potentialProvince.length > 2) {
+      province = potentialProvince;
+    }
+  }
+
+  // Casos especiales obligatorios por si el orden de las comas varía en algunas zonas:
+  if (!province) {
+    if (fullText.includes('maynas') || fullText.includes('iquitos')) province = 'Maynas';
+    else if (fullText.includes('chiclayo')) province = 'Chiclayo';
+    else if (fullText.includes('trujillo')) province = 'Trujillo';
+    else if (fullText.includes('piura')) province = 'Piura';
+    else if (fullText.includes('huancayo')) province = 'Huancayo';
+    else if (fullText.includes('arequipa')) province = 'Arequipa';
+    else if (fullText.includes('cusco')) province = 'Cusco';
+  }
+}
+
+// Corrección para Lima Metropolitana (caso único donde el departamento y provincia se llaman igual)
+if (addr.state === 'Lima' && (!province || province.toLowerCase() === 'lima')) {
+  province = 'Lima';
+}
+
+// Guardamos el resultado final con la primera letra en mayúscula para que se vea estético
+if (province) {
+  // Convierte "chiclayo" o "MAYNAS" en "Chiclayo" o "Maynas"
+  const formattedProvince = province.charAt(0).toUpperCase() + province.slice(1).toLowerCase();
+  setSelectedProvince(formattedProvince);
+} else {
+  setSelectedProvince('Provincia no detectada');
+}
+// =========================================================================
 
         // 3. DEPARTAMENTO
         setSelectedState(addr.state || addr.region || 'Departamento no detectado');
@@ -518,15 +568,15 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
               <button
-                type='button'
-                onClick={() => window.open('https://bit.ly/mapa-inseguridad-iquitos', '_blank')}
-                className="flex flex-col items-center gap-2 p-6 bg-white rounded-[2rem] border-2 border-emerald-50 hover:border-emerald-500 transition-all group"
-              >
-                <span className="text-3xl group-hover:scale-110 transition-transform">🗺️</span>
-                <span className="text-[14px] font-black uppercase tracking-widest text-emerald-900">
-                  Ver Mapa
-                </span>
-              </button>
+  type='button'
+  onClick={() => router.push('/mapa')}
+  className="flex flex-col items-center gap-2 p-6 bg-white rounded-[2rem] border-2 border-emerald-50 hover:border-emerald-500 transition-all group"
+>
+  <span className="text-3xl group-hover:scale-110 transition-transform">🗺️</span>
+  <span className="text-[14px] font-black uppercase tracking-widest text-emerald-900">
+    Ver Mapa
+  </span>
+</button>
 
               <button
                 onClick={() => router.push('/estadisticas')}

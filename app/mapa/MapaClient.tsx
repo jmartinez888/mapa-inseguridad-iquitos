@@ -112,11 +112,10 @@ export default function MapaClient() {
             {/* ENCABEZADO INFORMATIVO */}
             <div className="space-y-4">
                 <h1 className="text-3xl md:text-4xl font-black text-[#004d3d] tracking-tight leading-tight">
-                    Mapa de Inseguridad Ciudadana en Iquitos y Distritos Metropolitanos
+                    Mapa de Inseguridad Ciudadana del Perú
                 </h1>
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                    Visualiza los reportes ciudadanos en tiempo real para
-                    <span className="text-[#007a5e] font-bold"> Iquitos, San Juan, Belén y Punchana</span>.
+                    Visualiza los reportes ciudadanos en tiempo real para                    
                 </p>
             </div>
 
@@ -125,7 +124,7 @@ export default function MapaClient() {
                 <MapContainer
                     {...({
                         center: CENTER,
-                        zoom: 6,
+                        zoom: 5,
                         scrollWheelZoom: true,
                         className: "h-full w-full"
                     } as any)}
