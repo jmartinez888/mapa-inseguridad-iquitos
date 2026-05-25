@@ -8,21 +8,22 @@ datasource db {
 }
 
 model IncidentReport {
-  id              String   @id @default(uuid())
-  district        String
-  incidentType    String
-  stolenObject    String?
-  victimGender    String
-
-  latitude        Float
-  longitude       Float
-
-  exactDate       DateTime?
-  approximateDate String?
-
-  timeOfDay       String
-  description     String?
-  contactInfo     String?
-
-  createdAt       DateTime @default(now())
+  id             String   @id @default(uuid())
+  lat            Float
+  lng            Float
+  district       String   // Guardará el Distrito
+  province       String?  // <-- AGREGAR (Opcional por si acaso)
+  state          String?  // <-- AGREGAR (Guardará el Departamento)
+  incidentType   String   // Tipo de incidente
+  stolenObject   String?  // <-- CAMBIAR A OPCIONAL con el '?' (Aquí va el detalle dinámico)
+  victimGender   String
+  incidentYear   Int
+  incidentMonth  Int?
+  incidentDay    Int?
+  timeOfDay      String
+  mobility       String
+  economicImpact String
+  description    String?  // Opcional si lo tenías así
+  contactInfo    String?  // Opcional
+  createdAt      DateTime @default(now())
 }
