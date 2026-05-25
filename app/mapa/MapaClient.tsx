@@ -1,10 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import L, { LatLngExpression } from 'leaflet'
+import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 
+// Extendemos la interfaz nativa de Leaflet para que TypeScript sepa 
+// perfectamente que nuestro mapa tiene la función nativa toggleFullscreen.
+interface CustomLeafletMap extends L.Map {
+    toggleFullscreen?: () => void;
+}
 
 // --- CONFIGURACIÓN DE ICONOS (Fix para Next.js) ---
 const customIcon = new L.Icon({
@@ -22,34 +27,25 @@ interface Report {
     incidentType: string;
     stolenObject: string;
     latitude: number;
+    lat?: number;
+    lng?: number;
     longitude: number;
     timeOfDay: string;
 }
 
-// --- COMPONENTE DE CONTROL FULLSCREEN (SIN ERRORES) ---
+// --- COMPONENTE DE CONTROL FULLSCREEN CORREGIDO (SIN MAP EN ROJO) ---
 function FullscreenControl() {
     const map = useMap();
 
     useEffect(() => {
         if (!map) return;
 
-        // Definimos la función de toggle manualmente para evitar errores de plugin
-        // @ts-ignore
-        map.toggleFullscreen = function () {
-            const container = map.getContainer();
-            if (!document.fullscreenElement) {
-                if (container.requestFullscreen) container.requestFullscreen();
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-            }
-        };
-
-        // Creamos un botón de control personalizado estilo Leaflet
+        // Creamos el control personalizado de Leaflet de forma estándar
         const CustomFsControl = L.Control.extend({
             options: { position: 'topleft' },
             onAdd: function () {
                 const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom');
-                btn.innerHTML = '⛶'; // Icono de pantalla completa
+                btn.innerHTML = '⛶'; 
                 btn.title = 'Ver en Pantalla Completa';
                 btn.style.backgroundColor = 'white';
                 btn.style.width = '34px';
@@ -63,10 +59,20 @@ function FullscreenControl() {
                 btn.style.border = '2px solid rgba(0,0,0,0.2)';
                 btn.style.borderRadius = '4px';
 
+                // Accedemos al contenedor del mapa directamente a través del método nativo
                 btn.onclick = function (e) {
                     e.preventDefault();
-                    // @ts-ignore
-                    map.toggleFullscreen();
+                    const container = map.getContainer();
+                    
+                    if (!document.fullscreenElement) {
+                        if (container.requestFullscreen) {
+                            container.requestFullscreen();
+                        }
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        }
+                    }
                 };
                 return btn;
             }
@@ -87,10 +93,10 @@ function FullscreenControl() {
 export default function MapaClient() {
     const [data, setData] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
-    const CENTER: LatLngExpression = [-9.19, -75.01]; // Centro: Iquitos
+    
+    const PERU_CENTER: [number, number] = [-9.19, -75.01];
 
     useEffect(() => {
-        // Sincronización con la API de Neon (Ruta en plural)
         fetch('/api/reports')
             .then(res => {
                 if (!res.ok) throw new Error("No se pudo obtener la información");
@@ -115,53 +121,65 @@ export default function MapaClient() {
                     Mapa de Inseguridad Ciudadana del Perú
                 </h1>
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                    Visualiza los reportes ciudadanos en tiempo real para                    
+                    Visualiza los reportes ciudadanos en tiempo real a nivel nacional.
                 </p>
             </div>
 
             {/* CONTENEDOR DEL MAPA */}
             <div className="h-[650px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 relative bg-slate-50">
                 <MapContainer
-                    {...({
-                        center: CENTER,
-                        zoom: 5,
-                        scrollWheelZoom: true,
-                        className: "h-full w-full"
-                    } as any)}
+                    center={PERU_CENTER}
+                    zoom={5}
+                    scrollWheelZoom={true}
+                    className="h-full w-full"
                 >
                     <TileLayer
-                        {...({
-                            url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        } as any)}
+                        url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
 
                     <FullscreenControl />
 
-                    {data.map((item) => (
-                        <Marker
-                            key={item.id}
-                            {...({
-                                position: [item.latitude, item.longitude],
-                                icon: customIcon
-                            } as any)}
-                        >
-                            <Popup>
-                                <div className="min-w-[180px] p-2">
-                                    <h3 className="font-bold text-red-600 border-b border-red-50 mb-2 pb-1 text-sm uppercase">
-                                        🚨 {item.incidentType}
-                                    </h3>
-                                    <div className="space-y-1.5 text-[11px] text-slate-700">
-                                        <p><strong>Objeto:</strong> {item.stolenObject}</p>
-                                        <p><strong>Horario:</strong> {item.timeOfDay}</p>
-                                        <p className="text-[10px] text-slate-500 font-bold mt-2 uppercase">
-                                            Distrito: {item.district}
-                                        </p>
-                                    </div>
-                                </div>
-                            </Popup>
-                        </Marker>
-                    ))}
+                    {data
+                        .filter((item) => {
+                            const latitud = item.lat ?? item.latitude;
+                            const longitud = item.lng ?? item.longitude;
+                            return (
+                                latitud !== undefined && 
+                                longitud !== undefined && 
+                                !isNaN(Number(latitud)) && 
+                                !isNaN(Number(longitud))
+                            );
+                        })
+                        .map((item) => {
+                            const latitudFinal = Number(item.lat ?? item.latitude);
+                            const longitudFinal = Number(item.lng ?? item.longitude);
+                            const posicionFinal: [number, number] = [latitudFinal, longitudFinal];
+
+                            return (
+                                <Marker
+                                    key={item.id}
+                                    position={posicionFinal}
+                                    icon={customIcon}
+                                >
+                                    <Popup>
+                                        <div className="min-w-[180px] p-2">
+                                            <h3 className="font-bold text-red-600 border-b border-red-50 mb-2 pb-1 text-sm uppercase">
+                                                🚨 {item.incidentType}
+                                            </h3>
+                                            <div className="space-y-1.5 text-[11px] text-slate-700">
+                                                <p><strong>Objeto:</strong> {item.stolenObject}</p>
+                                                <p><strong>Horario:</strong> {item.timeOfDay}</p>
+                                                <p className="text-[10px] text-slate-500 font-bold mt-2 uppercase">
+                                                    Distrito: {item.district}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            ); 
+                        }) 
+                    } 
                 </MapContainer>
 
                 {/* INDICADOR DE CARGA */}
@@ -177,7 +195,7 @@ export default function MapaClient() {
 
             <footer className="text-center pb-6">
                 <p className="text-sm text-slate-400 font-medium italic">
-                    "La seguridad la construimos todos compartiendo información veraz."
+                    La seguridad la construimos todos compartiendo información veraz.
                 </p>
             </footer>
         </div>
