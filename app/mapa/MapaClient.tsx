@@ -15,28 +15,6 @@ const customIcon = new L.Icon({
     popupAnchor: [1, -34],
 });
 
-const userLocationIcon = new L.DivIcon({
-    html: `<div style="
-        background-color: #2563eb; 
-        width: 16px; 
-        height: 16px; 
-        border-radius: 50%; 
-        border: 3px solid white; 
-        box-shadow: 0 0 8px rgba(0,0,0,0.4);
-        animation: pulse 2s infinite;
-    "></div>
-    <style>
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-        }
-    </style>`,
-    className: 'custom-user-icon',
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
-});
-
 interface Report {
     id: string;
     district: string;
@@ -49,13 +27,13 @@ interface Report {
     timeOfDay: string;
 }
 
-// 🔹 SUBCOMPONENTE REALTOR DE CÁMARA (Fuerza al mapa a moverse de verdad)
+// 🔹 SUBCOMPONENTE DE CÁMARA (Fuerza al mapa a renderizar el tamaño correcto sin congelarse)
 function ActualizadorCamara({ center, zoom }: { center: [number, number]; zoom: number }) {
     const map = useMap();
     useEffect(() => {
         if (center) {
             map.setView(center, zoom);
-            map.invalidateSize(); // Previene cuadros grises o congelamientos
+            map.invalidateSize(); // Previene cuadros grises o cortes en el mapa base
         }
     }, [center, zoom, map]);
     return null;
@@ -65,13 +43,11 @@ export default function MapaClient() {
     const [data, setData] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     
-    // Punto de partida: Vista panorámica de Perú en zoom 6
-    const RESPALDO_PERU: [number, number] = [-9.1899, -75.0151];
-    const [mapCenter, setMapCenter] = useState<[number, number]>(RESPALDO_PERU);
-    const [mapZoom, setMapZoom] = useState<number>(6);
-    const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
+    // Coordenadas fijas: Centro del Perú y Zoom General 6
+    const PERU_CENTER: [number, number] = [-9.1899, -75.0151];
+    const ZOOM_GENERAL = 6;
 
-    // 1. Cargar datos de los reportes
+    // 1. Cargar datos de los reportes desde la base de datos
     useEffect(() => {
         fetch('/api/reports')
             .then(res => {
@@ -86,38 +62,6 @@ export default function MapaClient() {
                 console.error("Error al cargar reportes:", err);
                 setLoading(false);
             });
-    }, []);
-
-    // 2. Localizar al usuario inmediatamente usando configuraciones más permisivas
-    useEffect(() => {
-        if (typeof window !== 'undefined' && navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-                    console.log("📍 Ubicación encontrada con éxito:", coords);
-                    setUserPosition(coords);
-                    setMapCenter(coords);
-                    setMapZoom(14); // Cambia el zoom a vista de ciudad en cuanto responde
-                },
-                (error) => {
-                    console.error("❌ Error de Geolocalización:", error.message);
-                    // Si falla, intentamos una segunda búsqueda rápida sin alta precisión (para PCs de escritorio)
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-                            setUserPosition(coords);
-                            setMapCenter(coords);
-                            setMapZoom(14);
-                        },
-                        (err2) => {
-                            console.log("No se pudo obtener ubicación con ningún método. Quedando en Perú general.");
-                        },
-                        { enableHighAccuracy: false, timeout: 10000 }
-                    );
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
-        }
     }, []);
 
     return (
@@ -135,8 +79,8 @@ export default function MapaClient() {
             {/* CONTENEDOR DEL MAPA */}
             <div className="h-[650px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 relative bg-slate-50">
                 <MapContainer
-                    center={mapCenter} 
-                    zoom={mapZoom} 
+                    center={PERU_CENTER} 
+                    zoom={ZOOM_GENERAL} 
                     scrollWheelZoom={true}
                     className="h-full w-full"
                 >
@@ -145,18 +89,7 @@ export default function MapaClient() {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
 
-                    {/* Punto azul de tu posición actual */}
-                    {userPosition && (
-                        <Marker position={userPosition} icon={userLocationIcon}>
-                            <Popup>
-                                <div className="text-center font-sans p-1 text-xs">
-                                    <p className="font-bold text-blue-600">📍 Tu ubicación actual</p>
-                                </div>
-                            </Popup>
-                        </Marker>
-                    )}
-
-                    {/* Renderizado de pines guardados en la BD */}
+                    {/* Renderizado de los pines delictivos guardados en la BD */}
                     {data
                         .filter((item) => {
                             const latitud = item.lat ?? item.latitude;
@@ -198,8 +131,8 @@ export default function MapaClient() {
                         }) 
                     }
 
-                    {/* 🔹 ESTE COMPONENTE OBLIGA AL MAPA A MOVERSE CUANDO CAMBIA EL ESTADO */}
-                    <ActualizadorCamara center={mapCenter} zoom={mapZoom} />
+                    {/* Asegura que la cámara se mantenga perfectamente centrada en el país */}
+                    <ActualizadorCamara center={PERU_CENTER} zoom={ZOOM_GENERAL} />
 
                 </MapContainer>
 

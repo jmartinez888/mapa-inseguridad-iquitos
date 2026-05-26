@@ -14,25 +14,33 @@ const customIcon = typeof window !== 'undefined' ? new L.Icon({
   iconAnchor: [12, 41],
 }) : undefined;
 
-// --- CONFIGURACIÓN NACIONAL PERÚ ---
+// --- CONFIGURACIÓN BASE (PERÚ GENERAL POR SI EL GPS FALLA) ---
 const PERU_CENTER: [number, number] = [-9.19, -75.01]
-const ZOOM_SOLICITADO = 6 
+const ZOOM_INICIAL = 6 
 
 type MapPickerProps = {
   onLocationSelect: (lat: number, lng: number) => void
 }
 
-// --- COMPONENTE PARA FORZAR VISTA DINÁMICAMENTE ---
-function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
+// --- COMPONENTE PARA MOVER LA CÁMARA DEL MAPA ---
+function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
+
   useEffect(() => {
-    if (center) {
-      map.setView(center, zoom);
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 250);
+    if (map && typeof map.setView === 'function' && center) {
+      const timer = setTimeout(() => {
+        try {
+          map.setView(center, zoom);
+          map.invalidateSize();
+        } catch (err) {
+          console.warn("Leaflet no estaba listo para reubicar la vista:", err);
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
-  }, [center, zoom, map]);
+  }, [map, center, zoom]);
+
   return null;
 }
 
@@ -46,35 +54,46 @@ function ManejadorClics({ onClic }: { onClic: (lat: number, lng: number) => void
   return null;
 }
 
+// --- COMPONENTE PRINCIPAL ---
 export default function MapPicker({ onLocationSelect }: MapPickerProps) {
+  // Estado para el marcador (el pin azul)
   const [position, setPosition] = useState<[number, number] | null>(null)
   
-  // Estados de control para la cámara (Inicia en Perú general con zoom 6)
+  // Estados para controlar hacia dónde mira la cámara del mapa
   const [mapCenter, setMapCenter] = useState<[number, number]>(PERU_CENTER)
-  const [mapZoom, setMapZoom] = useState<number>(ZOOM_SOLICITADO)
+  const [mapZoom, setMapZoom] = useState<number>(ZOOM_INICIAL)
 
+  // DETECTAR LA UBICACIÓN REAL DEL USUARIO AL CARGAR (SOLO UNA VEZ)
   useEffect(() => {
-    // Intentar geolocalizar al usuario apenas cargue el componente en el cliente
-    if (typeof window !== 'undefined' && navigator.geolocation) {
+    let tieneUbicacionInicial = false;
+
+    if (typeof window !== 'undefined' && navigator.geolocation && !tieneUbicacionInicial) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const userCoords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-          console.log("📍 Ubicación para reporte detectada exitosamente:", userCoords);
+          if (tieneUbicacionInicial) return;
           
-          setMapCenter(userCoords);
-          setMapZoom(14); // Cambia automáticamente a vista de calle/ciudad (ej. Iquitos)
-          setPosition(userCoords);
-          onLocationSelect(userCoords[0], userCoords[1]);
+          const { latitude, longitude } = pos.coords;
+          
+          setMapCenter([latitude, longitude]);
+          setMapZoom(16);
+          setPosition([latitude, longitude]);
+          onLocationSelect(latitude, longitude);
+          
+          tieneUbicacionInicial = true;
         },
         (error) => {
-          console.log("Geolocalización no permitida o lenta. Manteniendo zoom panorámico 6 en Perú.");
+          console.log("Permiso de GPS denegado o apagado. Mapa base activo.");
         },
-        { enableHighAccuracy: false, timeout: 6000 }
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: Infinity 
+        }
       );
     }
-  }, [onLocationSelect])
+  }, [onLocationSelect]);
 
-  // Evita el renderizado en el servidor (SSR) de Next.js de manera limpia y sin estados extra
+  // Evita problemas de renderizado en el servidor (SSR)
   if (typeof window === 'undefined') return null
 
   return (
@@ -86,7 +105,7 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
         scrollWheelZoom={true}
         className="h-full w-full rounded-2xl"
       >
-        {/* Controlador dinámico de la cámara */}
+        {/* Mueve la cámara automáticamente a donde esté el centro actual */}
         <ChangeView center={mapCenter} zoom={mapZoom} />
 
         <TileLayer
@@ -94,13 +113,14 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Captura los clics en el mapa para mover el pin manualmente */}
+        {/* PERMITE CAMBIAR EL PIN SI HACES CLIC EN OTRO LADO */}
         <ManejadorClics onClic={(lat, lng) => {
-          setPosition([lat, lng]);
-          onLocationSelect(lat, lng);
+          setPosition([lat, lng]);    // Cambia el pin azul de sitio
+          setMapCenter([lat, lng]);   // Mueve la cámara al punto cliqueado para evitar rebotes automáticos
+          onLocationSelect(lat, lng); // Notifica el cambio al backend/formulario de app/page.tsx
         }} />
 
-        {/* Renderiza el pin azul del reporte si existe una posición válida */}
+        {/* Si hay una posición seleccionada, dibuja el pin */}
         {position && (
           <Marker position={position} icon={customIcon} />
         )}
