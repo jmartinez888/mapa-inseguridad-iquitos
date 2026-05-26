@@ -5,7 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 
-// --- CONFIGURACIÓN DE ICONOS ---
+// --- CONFIGURACIÓN DE ICONOS NATIVOS ---
 const customIcon = new L.Icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -15,7 +15,6 @@ const customIcon = new L.Icon({
     popupAnchor: [1, -34],
 });
 
-// Icono personalizado para el usuario (Punto azul de ubicación)
 const userLocationIcon = new L.DivIcon({
     html: `<div style="
         background-color: #2563eb; 
@@ -50,98 +49,29 @@ interface Report {
     timeOfDay: string;
 }
 
-// --- COMPONENTE DETECTOR DE UBICACIÓN AUTOMÁTICA ---
-function LocationMarker() {
+// 🔹 SUBCOMPONENTE REALTOR DE CÁMARA (Fuerza al mapa a moverse de verdad)
+function ActualizadorCamara({ center, zoom }: { center: [number, number]; zoom: number }) {
     const map = useMap();
-    const [position, setPosition] = useState<[number, number] | null>(null);
-
     useEffect(() => {
-        if (!map) return;
-
-        // Dispara la detección automática de ubicación al cargar
-        map.locate({ setView: false }); 
-
-        // Cuando Leaflet encuentra con éxito la ubicación del usuario
-        map.on('locationfound', (e) => {
-            const coords: [number, number] = [e.latlng.lat, e.latlng.lng];
-            setPosition(coords);
-            map.flyTo(coords, 16, { animate: true, duration: 1.5 }); // Hace un zoom 16 suave y directo al usuario
-        });
-
-        // Si el usuario deniega el permiso o falla el GPS, no rompe la app
-        map.on('locationerror', () => {
-            console.log("Permiso de ubicación denegado o GPS desactivado.");
-        });
-    }, [map]);
-
-    return position === null ? null : (
-        <Marker position={position} icon={userLocationIcon}>
-            <Popup>
-                <div className="text-center font-sans p-1 text-xs">
-                    <p className="font-bold text-blue-600">📍 Tu ubicación actual</p>
-                </div>
-            </Popup>
-        </Marker>
-    );
-}
-
-// --- COMPONENTE DE CONTROL FULLSCREEN ---
-function FullscreenControl() {
-    const map = useMap();
-
-    useEffect(() => {
-        if (!map) return;
-
-        const CustomFsControl = L.Control.extend({
-            options: { position: 'topleft' },
-            onAdd: function () {
-                const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom');
-                btn.innerHTML = '⛶'; 
-                btn.title = 'Ver en Pantalla Completa';
-                btn.style.backgroundColor = 'white';
-                btn.style.width = '34px';
-                btn.style.height = '34px';
-                btn.style.fontSize = '18px';
-                btn.style.cursor = 'pointer';
-                btn.style.fontWeight = 'bold';
-                btn.style.display = 'flex';
-                btn.style.alignItems = 'center';
-                btn.style.justifyContent = 'center';
-                btn.style.border = '2px solid rgba(0,0,0,0.2)';
-                btn.style.borderRadius = '4px';
-
-                btn.onclick = function (e) {
-                    e.preventDefault();
-                    const container = map.getContainer();
-                    if (!document.fullscreenElement) {
-                        if (container.requestFullscreen) container.requestFullscreen();
-                    } else {
-                        if (document.exitFullscreen) document.exitFullscreen();
-                    }
-                };
-                return btn;
-            }
-        });
-
-        const fsControl = new CustomFsControl();
-        map.addControl(fsControl);
-
-        return () => {
-            try { map.removeControl(fsControl); } catch (e) { }
-        };
-    }, [map]);
-
+        if (center) {
+            map.setView(center, zoom);
+            map.invalidateSize(); // Previene cuadros grises o congelamientos
+        }
+    }, [center, zoom, map]);
     return null;
 }
 
-// --- COMPONENTE PRINCIPAL ---
 export default function MapaClient() {
     const [data, setData] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     
-    // Centro por defecto en Iquitos por si no activan el GPS
-    const DEFAULT_CENTER: [number, number] = [-3.749, -73.253];
+    // Punto de partida: Vista panorámica de Perú en zoom 6
+    const RESPALDO_PERU: [number, number] = [-9.1899, -75.0151];
+    const [mapCenter, setMapCenter] = useState<[number, number]>(RESPALDO_PERU);
+    const [mapZoom, setMapZoom] = useState<number>(6);
+    const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
 
+    // 1. Cargar datos de los reportes
     useEffect(() => {
         fetch('/api/reports')
             .then(res => {
@@ -153,14 +83,45 @@ export default function MapaClient() {
                 setLoading(false);
             })
             .catch(err => {
-                console.error("Error al cargar reportes en el mapa:", err);
+                console.error("Error al cargar reportes:", err);
                 setLoading(false);
             });
     }, []);
 
+    // 2. Localizar al usuario inmediatamente usando configuraciones más permisivas
+    useEffect(() => {
+        if (typeof window !== 'undefined' && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+                    console.log("📍 Ubicación encontrada con éxito:", coords);
+                    setUserPosition(coords);
+                    setMapCenter(coords);
+                    setMapZoom(14); // Cambia el zoom a vista de ciudad en cuanto responde
+                },
+                (error) => {
+                    console.error("❌ Error de Geolocalización:", error.message);
+                    // Si falla, intentamos una segunda búsqueda rápida sin alta precisión (para PCs de escritorio)
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+                            setUserPosition(coords);
+                            setMapCenter(coords);
+                            setMapZoom(14);
+                        },
+                        (err2) => {
+                            console.log("No se pudo obtener ubicación con ningún método. Quedando en Perú general.");
+                        },
+                        { enableHighAccuracy: false, timeout: 10000 }
+                    );
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        }
+    }, []);
+
     return (
         <div className="max-w-6xl mx-auto px-4 py-8 space-y-10 font-sans">
-
             {/* ENCABEZADO INFORMATIVO */}
             <div className="space-y-4">
                 <h1 className="text-3xl md:text-4xl font-black text-[#004d3d] tracking-tight leading-tight">
@@ -174,8 +135,8 @@ export default function MapaClient() {
             {/* CONTENEDOR DEL MAPA */}
             <div className="h-[650px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 relative bg-slate-50">
                 <MapContainer
-                    center={DEFAULT_CENTER}
-                    zoom={13} 
+                    center={mapCenter} 
+                    zoom={mapZoom} 
                     scrollWheelZoom={true}
                     className="h-full w-full"
                 >
@@ -184,9 +145,18 @@ export default function MapaClient() {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
 
-                    <FullscreenControl />
-                    <LocationMarker />
+                    {/* Punto azul de tu posición actual */}
+                    {userPosition && (
+                        <Marker position={userPosition} icon={userLocationIcon}>
+                            <Popup>
+                                <div className="text-center font-sans p-1 text-xs">
+                                    <p className="font-bold text-blue-600">📍 Tu ubicación actual</p>
+                                </div>
+                            </Popup>
+                        </Marker>
+                    )}
 
+                    {/* Renderizado de pines guardados en la BD */}
                     {data
                         .filter((item) => {
                             const latitud = item.lat ?? item.latitude;
@@ -215,7 +185,7 @@ export default function MapaClient() {
                                                 🚨 {item.incidentType}
                                             </h3>
                                             <div className="space-y-1.5 text-[11px] text-slate-700">
-                                                <p><strong>Objeto:</strong> {item.stolenObject}</p>
+                                                <p><strong>Objeto:</strong> {item.stolenObject || 'No especificado'}</p>
                                                 <p><strong>Horario:</strong> {item.timeOfDay}</p>
                                                 <p className="text-[10px] text-slate-500 font-bold mt-2 uppercase">
                                                     Distrito: {item.district}
@@ -226,7 +196,11 @@ export default function MapaClient() {
                                 </Marker>
                             ); 
                         }) 
-                    } 
+                    }
+
+                    {/* 🔹 ESTE COMPONENTE OBLIGA AL MAPA A MOVERSE CUANDO CAMBIA EL ESTADO */}
+                    <ActualizadorCamara center={mapCenter} zoom={mapZoom} />
+
                 </MapContainer>
 
                 {/* INDICADOR DE CARGA */}
