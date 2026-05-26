@@ -27,13 +27,13 @@ interface Report {
     timeOfDay: string;
 }
 
-// 🔹 SUBCOMPONENTE DE CÁMARA (Fuerza al mapa a renderizar el tamaño correcto sin congelarse)
+// 🔹 SUBCOMPONENTE DE CÁMARA
 function ActualizadorCamara({ center, zoom }: { center: [number, number]; zoom: number }) {
     const map = useMap();
     useEffect(() => {
         if (center) {
             map.setView(center, zoom);
-            map.invalidateSize(); // Previene cuadros grises o cortes en el mapa base
+            map.invalidateSize(); 
         }
     }, [center, zoom, map]);
     return null;
@@ -43,9 +43,11 @@ export default function MapaClient() {
     const [data, setData] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     
-    // Coordenadas fijas: Centro del Perú y Zoom General 6
+    // Coordenadas fijas: Centro del Perú y Zoom Intermedio óptimo
     const PERU_CENTER: [number, number] = [-9.1899, -75.0151];
-    const ZOOM_GENERAL = 6;
+    
+    // 💡 PROBABLEMENTE TU ZOOM IDEAL SEA 5.4 o 5.5
+    const ZOOM_GENERAL = 5.4;
 
     // 1. Cargar datos de los reportes desde la base de datos
     useEffect(() => {
@@ -83,6 +85,9 @@ export default function MapaClient() {
                     zoom={ZOOM_GENERAL} 
                     scrollWheelZoom={true}
                     className="h-full w-full"
+                    // 💡 ESTAS PROPIEDADES PERMITEN EL ZOOM DECIMAL
+                    zoomSnap={0.1}
+                    zoomDelta={0.5}
                 >
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
