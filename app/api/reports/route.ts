@@ -3,17 +3,17 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic';
 
-// 1. Evitar múltiples instancias de Prisma en desarrollo
+// Evitar múltiples instancias de Prisma en desarrollo
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 const prisma = globalForPrisma.prisma || new PrismaClient()
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
-// 🔹 GUARDAR REPORTE (POST) - Versión Segura
+// 🔹 GUARDAR REPORTE (POST) - Sincronizado con tu Schema Real
 export async function POST(req: Request) {
   try {
     const data = await req.json()
 
-    // Validamos la existencia de las coordenadas en el cuerpo de la petición
+    // Validamos la existencia de las coordenadas (usando lat y lng de tu esquema)
     const rawLat = data.latitude ?? data.lat;
     const rawLng = data.longitude ?? data.lng;
 
@@ -24,7 +24,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Convertimos a número flotante asegurando que no rompa Prisma
     const parsedLat = parseFloat(rawLat);
     const parsedLng = parseFloat(rawLng);
 
@@ -35,17 +34,40 @@ export async function POST(req: Request) {
       )
     }
 
+    // Manejo técnico de las fechas desglosadas (Año, Mes, Día)
+    let year = data.incidentYear;
+    let month = data.incidentMonth;
+    let day = data.incidentDay;
+
+    // Si del formulario viene una fecha completa (ej. exactDate), extraemos los valores
+    if (data.exactDate) {
+      const fechaObj = new Date(data.exactDate);
+      if (!isNaN(fechaObj.getTime())) {
+        year = fechaObj.getFullYear();
+        month = fechaObj.getMonth() + 1; // JS cuenta los meses de 0 a 11
+        day = fechaObj.getDate();
+      }
+    }
+
+    // Valores por defecto obligatorios por si no vienen en la petición
+    if (!year) year = new Date().getFullYear();
+
     const newReport = await prisma.incidentReport.create({
       data: {
-        district: data.district,
+        lat: parsedLat,
+        lng: parsedLng,
+        district: data.district || 'Iquitos',
+        province: data.province || 'Maynas',
+        state: data.state || 'Loreto',
         incidentType: data.incidentType,
         stolenObject: data.stolenObject || null,
         victimGender: data.victimGender,
-        latitude: parsedLat,
-        longitude: parsedLng,
-        exactDate: data.exactDate ? new Date(data.exactDate) : null,
-        approximateDate: data.approximateDate || null,
+        incidentYear: Number(year),
+        incidentMonth: month ? Number(month) : null,
+        incidentDay: day ? Number(day) : null,
         timeOfDay: data.timeOfDay,
+        mobility: data.mobility || 'A pie',
+        economicImpact: data.economicImpact || 'Bajo',
         description: data.description || null,
         contactInfo: data.contactInfo || null,
       },
@@ -62,7 +84,7 @@ export async function POST(req: Request) {
   }
 }
 
-// 🔹 OBTENER TODOS LOS REPORTES (GET) - Sintaxis Corregida
+// 🔹 OBTENER TODOS LOS REPORTES (GET)
 export async function GET() {
   try {
     const reports = await prisma.incidentReport.findMany({
@@ -71,7 +93,6 @@ export async function GET() {
       },
     })
 
-    // Devolvemos el array directamente para que el mapa y los gráficos lo recorran
     return NextResponse.json(reports)
 
   } catch (error) {
