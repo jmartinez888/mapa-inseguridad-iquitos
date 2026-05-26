@@ -12,6 +12,8 @@ const customIcon = typeof window !== 'undefined' ? new L.Icon({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
+  // 💡 Aplicamos clases de Tailwind con filtros CSS para rotar el color azul nativo a rojo vivo
+  className: 'filter hue-rotate-[140deg] saturate-900 brightness-100'
 }) : undefined;
 
 // --- CONFIGURACIÓN BASE (PERÚ GENERAL POR SI EL GPS FALLA) ---
@@ -56,7 +58,7 @@ function ManejadorClics({ onClic }: { onClic: (lat: number, lng: number) => void
 
 // --- COMPONENTE PRINCIPAL ---
 export default function MapPicker({ onLocationSelect }: MapPickerProps) {
-  // Estado para el marcador (el pin azul)
+  // Estado para el marcador
   const [position, setPosition] = useState<[number, number] | null>(null)
   
   // Estados para controlar hacia dónde mira la cámara del mapa
@@ -115,12 +117,12 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
 
         {/* PERMITE CAMBIAR EL PIN SI HACES CLIC EN OTRO LADO */}
         <ManejadorClics onClic={(lat, lng) => {
-          setPosition([lat, lng]);    // Cambia el pin azul de sitio
-          setMapCenter([lat, lng]);   // Mueve la cámara al punto cliqueado para evitar rebotes automáticos
-          onLocationSelect(lat, lng); // Notifica el cambio al backend/formulario de app/page.tsx
+          setPosition([lat, lng]);    // Cambia el pin de sitio
+          setMapCenter([lat, lng]);   // Mueve la cámara al punto cliqueado
+          onLocationSelect(lat, lng); // Notifica el cambio al backend
         }} />
 
-        {/* Si hay una posición seleccionada, dibuja el pin */}
+        {/* Si hay una posición seleccionada, dibuja el pin rojo */}
         {position && (
           <Marker position={position} icon={customIcon} />
         )}
