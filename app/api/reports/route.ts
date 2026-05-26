@@ -8,10 +8,32 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient }
 const prisma = globalForPrisma.prisma || new PrismaClient()
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
-// 🔹 GUARDAR REPORTE (POST)
+// 🔹 GUARDAR REPORTE (POST) - Versión Segura
 export async function POST(req: Request) {
   try {
     const data = await req.json()
+
+    // Validamos la existencia de las coordenadas en el cuerpo de la petición
+    const rawLat = data.latitude ?? data.lat;
+    const rawLng = data.longitude ?? data.lng;
+
+    if (rawLat === undefined || rawLng === undefined || rawLat === null || rawLng === null) {
+      return NextResponse.json(
+        { ok: false, error: "La latitud y longitud son campos obligatorios." },
+        { status: 400 }
+      )
+    }
+
+    // Convertimos a número flotante asegurando que no rompa Prisma
+    const parsedLat = parseFloat(rawLat);
+    const parsedLng = parseFloat(rawLng);
+
+    if (isNaN(parsedLat) || isNaN(parsedLng)) {
+      return NextResponse.json(
+        { ok: false, error: "Las coordenadas proporcionadas no tienen un formato numérico válido." },
+        { status: 400 }
+      )
+    }
 
     const newReport = await prisma.incidentReport.create({
       data: {
@@ -19,8 +41,8 @@ export async function POST(req: Request) {
         incidentType: data.incidentType,
         stolenObject: data.stolenObject || null,
         victimGender: data.victimGender,
-        latitude: parseFloat(data.latitude || data.lat),
-        longitude: parseFloat(data.longitude || data.lng),
+        latitude: parsedLat,
+        longitude: parsedLng,
         exactDate: data.exactDate ? new Date(data.exactDate) : null,
         approximateDate: data.approximateDate || null,
         timeOfDay: data.timeOfDay,
@@ -34,13 +56,13 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("❌ ERROR AL GUARDAR:", error)
     return NextResponse.json(
-      { ok: false, error: "Error al guardar el reporte" },
+      { ok: false, error: "Error interno al guardar el reporte" },
       { status: 500 }
     )
   }
 }
 
-// 🔹 OBTENER TODOS LOS REPORTES (GET)
+// 🔹 OBTENER TODOS LOS REPORTES (GET) - Sintaxis Corregida
 export async function GET() {
   try {
     const reports = await prisma.incidentReport.findMany({
@@ -49,7 +71,7 @@ export async function GET() {
       },
     })
 
-    // Devolvemos el array directamente para que el mapa lo recorra con .map()
+    // Devolvemos el array directamente para que el mapa y los gráficos lo recorran
     return NextResponse.json(reports)
 
   } catch (error) {
