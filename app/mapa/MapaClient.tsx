@@ -1,19 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import L from 'leaflet'
+// 💡 Se quitó L porque ya no configuramos imágenes para los iconos
 import 'leaflet/dist/leaflet.css'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
-
-// --- CONFIGURACIÓN DE ICONOS NATIVOS ---
-const customIcon = new L.Icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-});
+// 💡 Importamos CircleMarker en lugar de Marker
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
 
 interface Report {
     id: string;
@@ -45,8 +36,6 @@ export default function MapaClient() {
     
     // Coordenadas fijas: Centro del Perú y Zoom Intermedio óptimo
     const PERU_CENTER: [number, number] = [-9.1899, -75.0151];
-    
-    // 💡 PROBABLEMENTE TU ZOOM IDEAL SEA 5.4 o 5.5
     const ZOOM_GENERAL = 5.4;
 
     // 1. Cargar datos de los reportes desde la base de datos
@@ -85,7 +74,6 @@ export default function MapaClient() {
                     zoom={ZOOM_GENERAL} 
                     scrollWheelZoom={true}
                     className="h-full w-full"
-                    // 💡 ESTAS PROPIEDADES PERMITEN EL ZOOM DECIMAL
                     zoomSnap={0.1}
                     zoomDelta={0.5}
                 >
@@ -94,7 +82,7 @@ export default function MapaClient() {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
 
-                    {/* Renderizado de los pines delictivos guardados en la BD */}
+                    {/* Renderizado de los puntos rojos guardados en la BD */}
                     {data
                         .filter((item) => {
                             const latitud = item.lat ?? item.latitude;
@@ -112,10 +100,17 @@ export default function MapaClient() {
                             const posicionFinal: [number, number] = [latitudFinal, longitudFinal];
 
                             return (
-                                <Marker
+                                // 💡 Aquí es donde se cambió <Marker> por <CircleMarker>
+                                <CircleMarker
                                     key={item.id}
-                                    position={posicionFinal}
-                                    icon={customIcon}
+                                    center={posicionFinal}
+                                    radius={6}             // Tamaño del punto (puedes subirlo a 8 si los ves muy chicos)
+                                    pathOptions={{
+                                        fillColor: '#ef4444', // Rojo vivo
+                                        fillOpacity: 0.9,     // Casi opaco
+                                        color: '#ffffff',     // Borde blanco nítido
+                                        weight: 1.5           // Grosor del borde
+                                    }}
                                 >
                                     <Popup>
                                         <div className="min-w-[180px] p-2">
@@ -131,7 +126,7 @@ export default function MapaClient() {
                                             </div>
                                         </div>
                                     </Popup>
-                                </Marker>
+                                </CircleMarker>
                             ); 
                         }) 
                     }
