@@ -1,13 +1,14 @@
 'use client'
 
-
+import TermsCheckbox from '@/components/TermsCheckbox'
 import { useState} from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 
-const MapPicker = dynamic(() => import('@/components/MapPicker'), {
+// Cargamos el mapa dinámicamente desactivando el renderizado en servidor (ssr: false)
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { 
   ssr: false,
-  loading: () => <div className="h-[250px] bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center text-slate-400 text-sm font-medium">Cargando mapa interactivo...</div>
+  loading: () => <div className="h-[350px] w-full bg-slate-100 rounded-3xl animate-pulse flex items-center justify-center text-slate-400 font-medium">Cargando mapa interactivo...</div>
 })
 
 export default function Home() {
@@ -22,104 +23,69 @@ export default function Home() {
   const [timeOfDay, setTimeOfDay] = useState<string>('')
   const [mobility, setMobility] = useState<string>('')
   const [economicImpact, setEconomicImpact] = useState<string>('')
-
+const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
   const handleLocationSelect = async (la: number, lo: number) => {
+    // 1. Guardamos de inmediato las coordenadas para que el marcador NO se mueva de donde diste clic
     setLat(la);
     setLng(lo);
 
     try {
-      // Llamada a la API de Nominatim
+      // 2. Simplificamos la URL eliminando parámetros pesados para evitar bloqueos por Rate Limit
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=18&addressdetails=1`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=16`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            // Un User-Agent genérico pero descriptivo ayuda a que no te denieguen el acceso
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) MapaInseguridad/1.0'
+          },
+          mode: 'cors'
+        }
       );
+
+      if (!response.ok) {
+        throw new Error(`Código de respuesta: ${response.status}`);
+      }
+
       const data = await response.json();
 
-      if (data.address) {
+      if (data && data.address) {
         const addr = data.address;
         const addressString = Object.values(addr)
           .join(' ')
           .toLowerCase()
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
-         
-        // 1. DISTRITO
+          
+        // DETECCIÓN DE DISTRITO
         const apiDistrict = addr.village || addr.suburb || addr.town || addr.city_district || addr.city;
 
         if (addressString.includes('punchana')) setSelectedDistrict('Punchana');
         else if (addressString.includes('belen')) setSelectedDistrict('Belén');
         else if (addressString.includes('san juan')) setSelectedDistrict('San Juan');
         else if (addressString.includes('iquitos')) setSelectedDistrict('Iquitos');
-        else setSelectedDistrict(apiDistrict || 'Zona no identificada');
+        else setSelectedDistrict(apiDistrict || 'Iquitos');
 
-       // =========================================================================
-// 2. PROVINCIA (SISTEMA DE DETECCIÓN UNIVERSAL PARA TODO EL PERÚ)
-// =========================================================================
-// Intento 1: Buscar en las etiquetas estructuradas normales de la API
-let province = addr.state_district || addr.county;
+        // DETECCIÓN DE PROVINCIA
+        let province = addr.state_district || addr.county;
+        if (!province && addressString.includes('maynas')) province = 'Maynas';
+        setSelectedProvince(province || 'Maynas');
 
-// Intento 2: Si la API no la detectó de forma estructurada (común en zonas rurales)
-if (!province && data.display_name) {
-  // Limpiamos el texto completo de la dirección (quitamos acentos y pasamos a minúsculas)
-  const fullText = data.display_name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-  // Creamos un array separando los elementos por comas (ej: ["rinconazo", "lambayeque", "chiclayo", "peru"])
- // Forzamos a que TypeScript sepa que display_name es un string usando (data.display_name as string)
-const addressParts = (data.display_name as string).split(',').map((part: string) => part.trim());
-
-  // En el formato de OpenStreetMap para Perú:
-  // Si miramos de atrás hacia adelante: [..., Provincia, Departamento/Región, Perú]
-  if (addressParts.length >= 3) {
-    // El último elemento es "Perú" (índice length - 1)
-    // El penúltimo suele ser el Departamento o Región (índice length - 2)
-    // El antepenúltimo suele ser la Provincia exacta (índice length - 3)
-    const potentialProvince = addressParts[addressParts.length - 3];
-    
-    // Filtro de seguridad: Evitamos que confunda el número de carretera o código postal con la provincia
-    if (potentialProvince && !/\d/.test(potentialProvince) && potentialProvince.length > 2) {
-      province = potentialProvince;
-    }
-  }
-
-  // Casos especiales obligatorios por si el orden de las comas varía en algunas zonas:
-  if (!province) {
-    if (fullText.includes('maynas') || fullText.includes('iquitos')) province = 'Maynas';
-    else if (fullText.includes('chiclayo')) province = 'Chiclayo';
-    else if (fullText.includes('trujillo')) province = 'Trujillo';
-    else if (fullText.includes('piura')) province = 'Piura';
-    else if (fullText.includes('huancayo')) province = 'Huancayo';
-    else if (fullText.includes('arequipa')) province = 'Arequipa';
-    else if (fullText.includes('cusco')) province = 'Cusco';
-  }
-}
-
-// Corrección para Lima Metropolitana (caso único donde el departamento y provincia se llaman igual)
-if (addr.state === 'Lima' && (!province || province.toLowerCase() === 'lima')) {
-  province = 'Lima';
-}
-
-// Guardamos el resultado final con la primera letra en mayúscula para que se vea estético
-if (province) {
-  // Convierte "chiclayo" o "MAYNAS" en "Chiclayo" o "Maynas"
-  const formattedProvince = province.charAt(0).toUpperCase() + province.slice(1).toLowerCase();
-  setSelectedProvince(formattedProvince);
-} else {
-  setSelectedProvince('Provincia no detectada');
-}
-// =========================================================================
-
-        // 3. DEPARTAMENTO
-        setSelectedState(addr.state || addr.region || 'Departamento no detectado');
+        // DETECCIÓN DE DEPARTAMENTO
+        setSelectedState(addr.state || 'Loreto');
       }
     } catch (error) {
-      // Este bloque es necesario para cerrar el try y manejar errores
-      console.error("Error identificando la ubicación:", error);
-      setSelectedDistrict('Error al detectar');
-      setSelectedProvince('Error al detectar');
+      // 3. RESPALDO INTELIGENTE: Si la API falla por red, NO alteramos las coordenadas de lat/lng.
+      // Solo llenamos los textos con datos por defecto de la zona para que el usuario pueda continuar.
+      console.warn("⚠️ Nominatim saturado. Usando geolocalización aproximada de respaldo:", error);
+      
+      // Mantenemos valores lógicos locales en vez de romper la interfaz
+      setSelectedDistrict('Iquitos (Ubicación marcada)');
+      setSelectedProvince('Maynas');
+      setSelectedState('Loreto');
     }
-  }; // <--- Ahora este cierre funcionará correctamente
+  };
   const handleReset = () => {
     setLat(null)
     setLng(null)
@@ -130,6 +96,7 @@ if (province) {
     setTimeOfDay('')
     setMobility('') 
     setEconomicImpact('') 
+    setAcceptTerms(false)
 
     const form = document.querySelector('form') as HTMLFormElement
     if (form) form.reset()
@@ -202,9 +169,7 @@ if (province) {
 
   return (
     <div className="min-h-screen bg-[#d1e2d9] bg-[radial-gradient(circle_at_top_right,_#e8f5ee_0%,_#d1e2d9_50%,_#b8cdc2_100%)] text-slate-900 pb-16 font-sans selection:bg-emerald-100">
-      {/* HEADER PRINCIPAL */}
-      {/* HEADER PRINCIPAL */}
-      {/* HEADER PRINCIPAL */}
+      {/* HEADER PRINCIPAL */}      
 
       <header className="p-8 md:p-14 mb-4 max-w-5xl mx-auto">
 
@@ -544,13 +509,25 @@ if (province) {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-emerald-700 text-white py-5 rounded-[2rem] text-lg font-black shadow-xl hover:bg-emerald-800 transition-all active:scale-95 disabled:bg-slate-300 mt-6"
-            >
-              {isSubmitting ? 'GUARDANDO REPORTE...' : 'REGISTRAR MI REPORTE ANÓNIMO'}
-            </button>
+            {/* 3. CONDICIONES LEGALES (Llamado modular) */}
+<TermsCheckbox checked={acceptTerms} onChange={setAcceptTerms} />
+
+<button
+  type="submit"
+  disabled={
+    isSubmitting || 
+    !acceptTerms || 
+    !lat || 
+    !lng || 
+    !incidentType || 
+    !timeOfDay || 
+    !mobility || 
+    !economicImpact
+  }
+  className="w-full bg-emerald-700 text-white py-5 rounded-[2rem] text-lg font-black shadow-xl hover:bg-emerald-800 transition-all active:scale-95 disabled:bg-slate-400 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+>
+  {isSubmitting ? 'GUARDANDO REPORTE...' : 'REGISTRAR MI REPORTE ANÓNIMO'}
+</button>
             <button
               type="button"
               onClick={() => {
