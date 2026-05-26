@@ -1,7 +1,7 @@
 'use client'
 
 
-import { useState, useEffect } from 'react'
+import { useState} from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 
@@ -123,11 +123,13 @@ if (province) {
   const handleReset = () => {
     setLat(null)
     setLng(null)
-    setSelectedDistrict('') // ✅ Limpia el distrito al resetear
+    setSelectedDistrict('') 
+    setSelectedProvince('') // <-- AGREGAR ESTO
+    setSelectedState('')    // <-- AGREGAR ESTO
     setIncidentType('')
     setTimeOfDay('')
-    setMobility('') // ✅ Limpiar movilidad
-    setEconomicImpact('') // ✅ Limpiar impacto
+    setMobility('') 
+    setEconomicImpact('') 
 
     const form = document.querySelector('form') as HTMLFormElement
     if (form) form.reset()
@@ -149,11 +151,15 @@ if (province) {
 
     const reportData = {
       district: selectedDistrict,
+      province: selectedProvince,
+      state: selectedState,
       incidentType:
-        formData.get('incidentType') === 'Otros'
+        formData.get('incidentType') === 'Otros' || formData.get('incidentType') === 'Otro'
           ? formData.get('incidentTypeOther')
           : formData.get('incidentType'),
-      stolenObject: formData.get('item'),
+      stolenObject: (incidentType === 'Robo con violencia o amenaza' || incidentType === 'Hurto (sin que me diera cuenta)') 
+        ? formData.get('item') 
+        : null, // <-- MODIFICAR ESTO (Solo guarda si fue hurto o robo)
       victimGender: formData.get('gender'),
       lat: lat,
       lng: lng,
@@ -334,16 +340,17 @@ if (province) {
             </div>
 
             {/* OBJETO ROBADO - Se muestra solo si es Robo o Hurto */}
+            {/* --- REQUERIMIENTO: TEXTO DINÁMICO EXTENDIDO PARA ROBO O HURTO --- */}
             {(incidentType === 'Robo con violencia o amenaza' || incidentType === 'Hurto (sin que me diera cuenta)') && (
-              <div className="space-y-3 animate-in zoom-in-95 duration-300">
-                <label className="text-sm font-black text-slate-700 uppercase tracking-wide">
-                  ¿Qué objeto le robaron o hurtaron? *
+              <div className="space-y-3 bg-amber-50/60 p-5 rounded-3xl border-2 border-amber-100 animate-in zoom-in-95 duration-300">
+                <label className="text-sm font-black text-amber-900 uppercase tracking-wide block">
+                  ¿Qué objetos le hurtaron o robaron? [Detalla de forma específica] *
                 </label>
                 <input
                   name="item"
-                  placeholder="Ej: Celular Samsung, Motocicleta Honda, Billetera"
+                  placeholder="Ej: Celular Samsung A54, Billetera con S/200 y DNI, Mochila negra, etc."
                   required
-                  className="w-full border-b-2 border-slate-300 py-3 text-base outline-none focus:border-emerald-600 bg-transparent transition-all"
+                  className="w-full border-b-2 border-amber-300 py-2 text-base outline-none focus:border-amber-600 bg-transparent transition-all text-slate-800 placeholder-slate-400"
                 />
               </div>
             )}

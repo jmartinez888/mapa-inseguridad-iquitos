@@ -1,7 +1,18 @@
 'use client'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-export default function ViolenceGenderChart({ data }: any) {
+interface ViolenceData {
+    genero: string;
+    'Con violencia': number;
+    'Sin violencia': number;
+    'Intento': number;
+}
+
+interface ViolenceGenderChartProps {
+    data: ViolenceData[];
+}
+
+export default function ViolenceGenderChart({ data = [] }: ViolenceGenderChartProps) {
     return (
         <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-50 h-[450px] flex flex-col">
             <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 text-center">
@@ -25,9 +36,8 @@ export default function ViolenceGenderChart({ data }: any) {
                             verticalAlign="bottom"
                             align="center"
                             iconType="square"
-                            wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase', paddingTop: '30px' }}
+                            wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', paddingTop: '30px' }}
                         />
-                        {/* Eliminamos stackId="a" y cambiamos la posición del label a 'top' para mejor visibilidad */}
                         <Bar
                             dataKey="Con violencia"
                             fill="#D64545"
