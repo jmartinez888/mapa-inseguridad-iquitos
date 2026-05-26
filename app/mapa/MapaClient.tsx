@@ -5,13 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 
-// Extendemos la interfaz nativa de Leaflet para que TypeScript sepa 
-// perfectamente que nuestro mapa tiene la función nativa toggleFullscreen.
-interface CustomLeafletMap extends L.Map {
-    toggleFullscreen?: () => void;
-}
-
-// --- CONFIGURACIÓN DE ICONOS (Fix para Next.js) ---
+// --- CONFIGURACIÓN DE ICONOS ---
 const customIcon = new L.Icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -19,6 +13,29 @@ const customIcon = new L.Icon({
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
+});
+
+// Icono personalizado para el usuario (Punto azul de ubicación)
+const userLocationIcon = new L.DivIcon({
+    html: `<div style="
+        background-color: #2563eb; 
+        width: 16px; 
+        height: 16px; 
+        border-radius: 50%; 
+        border: 3px solid white; 
+        box-shadow: 0 0 8px rgba(0,0,0,0.4);
+        animation: pulse 2s infinite;
+    "></div>
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+    </style>`,
+    className: 'custom-user-icon',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
 });
 
 interface Report {
@@ -33,14 +50,48 @@ interface Report {
     timeOfDay: string;
 }
 
-// --- COMPONENTE DE CONTROL FULLSCREEN CORREGIDO (SIN MAP EN ROJO) ---
+// --- COMPONENTE DETECTOR DE UBICACIÓN AUTOMÁTICA ---
+function LocationMarker() {
+    const map = useMap();
+    const [position, setPosition] = useState<[number, number] | null>(null);
+
+    useEffect(() => {
+        if (!map) return;
+
+        // Dispara la detección automática de ubicación al cargar
+        map.locate({ setView: false }); 
+
+        // Cuando Leaflet encuentra con éxito la ubicación del usuario
+        map.on('locationfound', (e) => {
+            const coords: [number, number] = [e.latlng.lat, e.latlng.lng];
+            setPosition(coords);
+            map.flyTo(coords, 16, { animate: true, duration: 1.5 }); // Hace un zoom 16 suave y directo al usuario
+        });
+
+        // Si el usuario deniega el permiso o falla el GPS, no rompe la app
+        map.on('locationerror', () => {
+            console.log("Permiso de ubicación denegado o GPS desactivado.");
+        });
+    }, [map]);
+
+    return position === null ? null : (
+        <Marker position={position} icon={userLocationIcon}>
+            <Popup>
+                <div className="text-center font-sans p-1 text-xs">
+                    <p className="font-bold text-blue-600">📍 Tu ubicación actual</p>
+                </div>
+            </Popup>
+        </Marker>
+    );
+}
+
+// --- COMPONENTE DE CONTROL FULLSCREEN ---
 function FullscreenControl() {
     const map = useMap();
 
     useEffect(() => {
         if (!map) return;
 
-        // Creamos el control personalizado de Leaflet de forma estándar
         const CustomFsControl = L.Control.extend({
             options: { position: 'topleft' },
             onAdd: function () {
@@ -59,19 +110,13 @@ function FullscreenControl() {
                 btn.style.border = '2px solid rgba(0,0,0,0.2)';
                 btn.style.borderRadius = '4px';
 
-                // Accedemos al contenedor del mapa directamente a través del método nativo
                 btn.onclick = function (e) {
                     e.preventDefault();
                     const container = map.getContainer();
-                    
                     if (!document.fullscreenElement) {
-                        if (container.requestFullscreen) {
-                            container.requestFullscreen();
-                        }
+                        if (container.requestFullscreen) container.requestFullscreen();
                     } else {
-                        if (document.exitFullscreen) {
-                            document.exitFullscreen();
-                        }
+                        if (document.exitFullscreen) document.exitFullscreen();
                     }
                 };
                 return btn;
@@ -94,7 +139,8 @@ export default function MapaClient() {
     const [data, setData] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     
-    const PERU_CENTER: [number, number] = [-9.19, -75.01];
+    // Centro por defecto en Iquitos por si no activan el GPS
+    const DEFAULT_CENTER: [number, number] = [-3.749, -73.253];
 
     useEffect(() => {
         fetch('/api/reports')
@@ -118,18 +164,18 @@ export default function MapaClient() {
             {/* ENCABEZADO INFORMATIVO */}
             <div className="space-y-4">
                 <h1 className="text-3xl md:text-4xl font-black text-[#004d3d] tracking-tight leading-tight">
-                    Mapa de Inseguridad Ciudadana del Perú
+                    Mapa de Inseguridad Ciudadana
                 </h1>
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                    Visualiza los reportes ciudadanos en tiempo real a nivel nacional.
+                    Visualiza los reportes ciudadanos en tiempo real en las zonas afectadas.
                 </p>
             </div>
 
             {/* CONTENEDOR DEL MAPA */}
             <div className="h-[650px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 relative bg-slate-50">
                 <MapContainer
-                    center={PERU_CENTER}
-                    zoom={5}
+                    center={DEFAULT_CENTER}
+                    zoom={13} 
                     scrollWheelZoom={true}
                     className="h-full w-full"
                 >
@@ -139,6 +185,7 @@ export default function MapaClient() {
                     />
 
                     <FullscreenControl />
+                    <LocationMarker />
 
                     {data
                         .filter((item) => {
@@ -187,7 +234,7 @@ export default function MapaClient() {
                     <div className="absolute top-6 right-6 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-3">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
                         <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
-                            Sincronizando reportes nacionales...
+                            Sincronizando reportes...
                         </span>
                     </div>
                 )}
