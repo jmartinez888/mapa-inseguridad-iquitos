@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L, { type LeafletMouseEvent } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -12,7 +12,6 @@ const customIcon = typeof window !== 'undefined' ? new L.Icon({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
-  // 💡 Aplicamos clases de Tailwind con filtros CSS para rotar el color azul nativo a rojo vivo
   className: 'filter hue-rotate-[140deg] saturate-900 brightness-100'
 }) : undefined;
 
@@ -58,44 +57,43 @@ function ManejadorClics({ onClic }: { onClic: (lat: number, lng: number) => void
 
 // --- COMPONENTE PRINCIPAL ---
 export default function MapPicker({ onLocationSelect }: MapPickerProps) {
-  // Estado para el marcador
   const [position, setPosition] = useState<[number, number] | null>(null)
-  
-  // Estados para controlar hacia dónde mira la cámara del mapa
   const [mapCenter, setMapCenter] = useState<[number, number]>(PERU_CENTER)
   const [mapZoom, setMapZoom] = useState<number>(ZOOM_INICIAL)
 
-  // DETECTAR LA UBICACIÓN REAL DEL USUARIO AL CARGAR (SOLO UNA VEZ)
+  // 🛠️ SOLUCIÓN AL BUCLE: Usamos un useRef para guardar si ya pedimos la ubicación una vez
+  // Los refs no se destruyen entre renders ni disparan el useEffect otra vez.
+  const gpsEjecutado = useRef(false);
+
+  // DETECTAR LA UBICACIÓN REAL DEL USUARIO AL CARGAR (SOLO UNA VEZ REAL)
   useEffect(() => {
-    let tieneUbicacionInicial = false;
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+    if (gpsEjecutado.current) return; // Si ya se ejecutó, bloqueamos cualquier intento repetido
 
-    if (typeof window !== 'undefined' && navigator.geolocation && !tieneUbicacionInicial) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (tieneUbicacionInicial) return;
-          
-          const { latitude, longitude } = pos.coords;
-          
-          setMapCenter([latitude, longitude]);
-          setMapZoom(16);
-          setPosition([latitude, longitude]);
-          onLocationSelect(latitude, longitude);
-          
-          tieneUbicacionInicial = true;
-        },
-        (error) => {
-          console.log("Permiso de GPS denegado o apagado. Mapa base activo.");
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: Infinity 
-        }
-      );
-    }
-  }, [onLocationSelect]);
+    gpsEjecutado.current = true; // Marcamos de inmediato que ya entró al proceso del GPS
 
-  // Evita problemas de renderizado en el servidor (SSR)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        
+        setMapCenter([latitude, longitude]);
+        setMapZoom(16);
+        setPosition([latitude, longitude]);
+        
+        // Ejecutamos la función de app/page.tsx de forma segura
+        onLocationSelect(latitude, longitude);
+      },
+      (error) => {
+        console.log("Permiso de GPS denegado o apagado. Mapa base activo.");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: Infinity 
+      }
+    );
+  }, []); // 🛠️ SOLUCIÓN AL BUCLE: Dejamos las dependencias vacías [] para que SOLO corra al montar el mapa
+
   if (typeof window === 'undefined') return null
 
   return (
@@ -107,7 +105,6 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
         scrollWheelZoom={true}
         className="h-full w-full rounded-2xl"
       >
-        {/* Mueve la cámara automáticamente a donde esté el centro actual */}
         <ChangeView center={mapCenter} zoom={mapZoom} />
 
         <TileLayer
@@ -115,14 +112,12 @@ export default function MapPicker({ onLocationSelect }: MapPickerProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* PERMITE CAMBIAR EL PIN SI HACES CLIC EN OTRO LADO */}
         <ManejadorClics onClic={(lat, lng) => {
-          setPosition([lat, lng]);    // Cambia el pin de sitio
-          setMapCenter([lat, lng]);   // Mueve la cámara al punto cliqueado
-          onLocationSelect(lat, lng); // Notifica el cambio al backend
+          setPosition([lat, lng]);    
+          setMapCenter([lat, lng]);   
+          onLocationSelect(lat, lng); 
         }} />
 
-        {/* Si hay una posición seleccionada, dibuja el pin rojo */}
         {position && (
           <Marker position={position} icon={customIcon} />
         )}
