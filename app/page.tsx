@@ -175,20 +175,16 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
     <div className="min-h-screen bg-[#d1e2d9] bg-[radial-gradient(circle_at_top_right,_#e8f5ee_0%,_#d1e2d9_50%,_#b8cdc2_100%)] text-slate-900 pb-16 font-sans selection:bg-emerald-100">
       {/* HEADER PRINCIPAL */}      
 
-      <header className="p-8 md:p-14 mb-4 max-w-5xl mx-auto">
+      <header className="px-6 md:p-10 max-w-5xl mx-auto">
 
         <div className="max-w-3xl mx-auto space-y-16">
 
           <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700 text-center block mb-7">
 
             Construyendo el mapa de inseguridad
-
             <br />
-
             ciudadana del Perú
-
             <br />
-
           </h1>
         </div>
 
