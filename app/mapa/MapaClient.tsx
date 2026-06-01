@@ -1,10 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-// 💡 Se quitó L porque ya no configuramos imágenes para los iconos
+import { useEffect, useState, useRef } from 'react'
 import 'leaflet/dist/leaflet.css'
-// 💡 Importamos CircleMarker en lugar de Marker
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 
 interface Report {
     id: string;
@@ -18,11 +16,64 @@ interface Report {
     timeOfDay: string;
 }
 
-// 🔹 SUBCOMPONENTE DE CÁMARA
+// --- SUBCOMPONENTE DE CAPA DE CALOR (HEATMAP) ---
+function HeatmapLayer({ points }: { points: [number, number, number][] }) {
+    const map = useMap();
+    const heatLayerRef = useRef<L.Layer | null>(null);
+
+    useEffect(() => {
+        if (!map || typeof window === 'undefined') return;
+
+        // Importamos el plugin dinámicamente en el cliente
+        import('leaflet.heat' as string).then(() => {
+            if (heatLayerRef.current) {
+                map.removeLayer(heatLayerRef.current);
+            }
+
+            // Solución limpia para satisfacer al linter estricto sin usar "any"
+            const ventanaDesconocida = window as unknown;
+            const contenedorGlobal = ventanaDesconocida as Record<string, unknown>;
+            const claveLeaflet = 'L';
+            const leafletGlobal = contenedorGlobal[claveLeaflet] as Record<string, unknown> | undefined;
+
+            if (leafletGlobal && typeof leafletGlobal.heatLayer === 'function') {
+                const crearCapaCalor = leafletGlobal.heatLayer as (
+                    pts: [number, number, number][],
+                    opciones: Record<string, unknown>
+                ) => L.Layer;
+
+                // 🎨 Capa térmica configurada con 3 colores de ALTO CONTRASTE
+                heatLayerRef.current = crearCapaCalor(points, {
+                    radius: 28,       // Radio de dispersión óptimo para distancias largas
+                    blur: 20,         // Suaviza la fusión de las manchas térmicas
+                    maxZoom: 17,      // Zoom límite de fusión
+                    max: 1.0,         
+                    gradient: {       
+                        0.3: '#0066ff', // 1. Azul Eléctrico (Alta visibilidad en vista macro/Perú)
+                        0.7: '#ffff00', // 2. Amarillo (Densidad media / Alerta)
+                        1.0: '#ff0000'  // 3. Rojo Vivo (Focos críticos de delincuencia)
+                    }
+                }).addTo(map);
+            }
+        }).catch((err) => {
+            console.error("Error al cargar la capa térmica en el cliente:", err);
+        });
+
+        return () => {
+            if (heatLayerRef.current && map) {
+                map.removeLayer(heatLayerRef.current);
+            }
+        };
+    }, [map, points]);
+
+    return null;
+}
+
+// --- SUBCOMPONENTE DE CÁMARA INICIAL ---
 function ActualizadorCamara({ center, zoom }: { center: [number, number]; zoom: number }) {
     const map = useMap();
     useEffect(() => {
-        if (center) {
+        if (center && map) {
             map.setView(center, zoom);
             map.invalidateSize(); 
         }
@@ -30,27 +81,46 @@ function ActualizadorCamara({ center, zoom }: { center: [number, number]; zoom: 
     return null;
 }
 
+// --- COMPONENTE PRINCIPAL ---
 export default function MapaClient() {
-    const [data, setData] = useState<Report[]>([]);
+    const [heatPoints, setHeatPoints] = useState<[number, number, number][]>([]);
     const [loading, setLoading] = useState(true);
     
-    // Coordenadas fijas: Centro del Perú y Zoom Intermedio óptimo
+    // 🗺️ Configuración: El mapa inicia mostrando todo el Perú de forma general
     const PERU_CENTER: [number, number] = [-9.1899, -75.0151];
     const ZOOM_GENERAL = 5.4;
 
-    // 1. Cargar datos de los reportes desde la base de datos
     useEffect(() => {
         fetch('/api/reports')
             .then(res => {
                 if (!res.ok) throw new Error("No se pudo obtener la información");
                 return res.json();
             })
-            .then(json => {
-                setData(json);
+            .then((json: Report[]) => {
+                // Filtramos las coordenadas válidas de la Base de Datos
+                const formattedPoints: [number, number, number][] = json
+                    .filter((item) => {
+                        const latitud = item.lat ?? item.latitude;
+                        const longitud = item.lng ?? item.longitude;
+                        return (
+                            latitud !== undefined && 
+                            longitud !== undefined && 
+                            !isNaN(Number(latitud)) && 
+                            !isNaN(Number(longitud))
+                        );
+                    })
+                    .map((item) => {
+                        const lat = Number(item.lat ?? item.latitude);
+                        const lng = Number(item.lng ?? item.longitude);
+                        // Estructura para leaflet.heat: [lat, lng, intensidad]
+                        return [lat, lng, 1.0];
+                    });
+
+                setHeatPoints(formattedPoints);
                 setLoading(false);
             })
             .catch(err => {
-                console.error("Error al cargar reportes:", err);
+                console.error("Error al cargar reportes para el mapa de calor:", err);
                 setLoading(false);
             });
     }, []);
@@ -60,10 +130,10 @@ export default function MapaClient() {
             {/* ENCABEZADO INFORMATIVO */}
             <div className="space-y-4">
                 <h1 className="text-3xl md:text-4xl font-black text-[#004d3d] tracking-tight leading-tight">
-                    Mapa de Inseguridad Ciudadana
+                    Mapa de Inseguridad Ciudadana del Perú
                 </h1>
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                    Visualiza los reportes ciudadanos en tiempo real en las zonas afectadas.
+                    Visualiza los reportes ciudadanos en tiempo real en las zonas más afectadas.
                 </p>
             </div>
 
@@ -82,58 +152,11 @@ export default function MapaClient() {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
 
-                    {/* Renderizado de los puntos rojos guardados en la BD */}
-                    {data
-                        .filter((item) => {
-                            const latitud = item.lat ?? item.latitude;
-                            const longitud = item.lng ?? item.longitude;
-                            return (
-                                latitud !== undefined && 
-                                longitud !== undefined && 
-                                !isNaN(Number(latitud)) && 
-                                !isNaN(Number(longitud))
-                            );
-                        })
-                        .map((item) => {
-                            const latitudFinal = Number(item.lat ?? item.latitude);
-                            const longitudFinal = Number(item.lng ?? item.longitude);
-                            const posicionFinal: [number, number] = [latitudFinal, longitudFinal];
+                    {/* Inyectamos la capa térmica si existen puntos cargados */}
+                    {heatPoints.length > 0 && <HeatmapLayer points={heatPoints} />}
 
-                            return (
-                                // 💡 Aquí es donde se cambió <Marker> por <CircleMarker>
-                                <CircleMarker
-                                    key={item.id}
-                                    center={posicionFinal}
-                                    radius={6}             // Tamaño del punto (puedes subirlo a 8 si los ves muy chicos)
-                                    pathOptions={{
-                                        fillColor: '#ef4444', // Rojo vivo
-                                        fillOpacity: 0.9,     // Casi opaco
-                                        color: '#ffffff',     // Borde blanco nítido
-                                        weight: 1.5           // Grosor del borde
-                                    }}
-                                >
-                                    <Popup>
-                                        <div className="min-w-[180px] p-2">
-                                            <h3 className="font-bold text-red-600 border-b border-red-50 mb-2 pb-1 text-sm uppercase">
-                                                🚨 {item.incidentType}
-                                            </h3>
-                                            <div className="space-y-1.5 text-[11px] text-slate-700">
-                                                <p><strong>Objeto:</strong> {item.stolenObject || 'No especificado'}</p>
-                                                <p><strong>Horario:</strong> {item.timeOfDay}</p>
-                                                <p className="text-[10px] text-slate-500 font-bold mt-2 uppercase">
-                                                    Distrito: {item.district}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Popup>
-                                </CircleMarker>
-                            ); 
-                        }) 
-                    }
-
-                    {/* Asegura que la cámara se mantenga perfectamente centrada en el país */}
+                    {/* Mantiene la cámara perfectamente posicionada en el inicio */}
                     <ActualizadorCamara center={PERU_CENTER} zoom={ZOOM_GENERAL} />
-
                 </MapContainer>
 
                 {/* INDICADOR DE CARGA */}
@@ -141,7 +164,7 @@ export default function MapaClient() {
                     <div className="absolute top-6 right-6 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-3">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
                         <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
-                            Sincronizando reportes...
+                            Calculando mapa térmico...
                         </span>
                     </div>
                 )}
@@ -149,7 +172,7 @@ export default function MapaClient() {
 
             <footer className="text-center pb-6">
                 <p className="text-sm text-slate-400 font-medium italic">
-                    La seguridad la construimos todos compartiendo información veraz.
+                    Visualización analítica basada en reportes vecinales compartidos de forma anónima.
                 </p>
             </footer>
         </div>

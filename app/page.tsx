@@ -24,65 +24,69 @@ export default function Home() {
   const [mobility, setMobility] = useState<string>('')
   const [economicImpact, setEconomicImpact] = useState<string>('')
 const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
-  const handleLocationSelect = async (la: number, lo: number) => {
-    // 1. Guardamos de inmediato las coordenadas para que el marcador NO se mueva de donde diste clic
+ const handleLocationSelect = async (la: number, lo: number) => {
+    if (!la || !lo || la === 0 || lo === 0) return;
+
     setLat(la);
     setLng(lo);
 
     try {
-      // 2. Simplificamos la URL eliminando parámetros pesados para evitar bloqueos por Rate Limit
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=16`,
-        {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            // Un User-Agent genérico pero descriptivo ayuda a que no te denieguen el acceso
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) MapaInseguridad/1.0'
-          },
-          mode: 'cors'
-        }
-      );
+      // Llamamos a nuestra propia API local, actuando como puente seguro
+      const response = await fetch(`/api/geocode?lat=${la}&lng=${lo}`);
 
       if (!response.ok) {
-        throw new Error(`Código de respuesta: ${response.status}`);
+        throw new Error(`Error en el proxy local: ${response.status}`);
       }
 
       const data = await response.json();
 
       if (data && data.address) {
         const addr = data.address;
+        
         const addressString = Object.values(addr)
           .join(' ')
           .toLowerCase()
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
-          
+
         // DETECCIÓN DE DISTRITO
-        const apiDistrict = addr.village || addr.suburb || addr.town || addr.city_district || addr.city;
+        let district = addr.village || addr.suburb || addr.town || addr.city_district || addr.city;
+        if (addressString.includes('punchana')) district = 'Punchana';
+        else if (addressString.includes('belen')) district = 'Belén';
+        else if (addressString.includes('san juan')) district = 'San Juan';
+        else if (addressString.includes('iquitos')) district = 'Iquitos';
+        
+        setSelectedDistrict(district || 'Desconocido');
 
-        if (addressString.includes('punchana')) setSelectedDistrict('Punchana');
-        else if (addressString.includes('belen')) setSelectedDistrict('Belén');
-        else if (addressString.includes('san juan')) setSelectedDistrict('San Juan');
-        else if (addressString.includes('iquitos')) setSelectedDistrict('Iquitos');
-        else setSelectedDistrict(apiDistrict || 'Iquitos');
+        // DETECCIÓN DE PROVINCIA (AUTOMÁTICA CON RESPALDO DE TEXTO)
+        let province = addr.state_district || addr.county || addr.region || addr.municipality;
+        
+        if (!province || province === '-') {
+          const addressParts = data.display_name ? data.display_name.split(',') : [];
+          if (addressParts.length >= 3) {
+            const potentialProvince = addressParts[addressParts.length - 3].trim();
+            if (
+              potentialProvince.toLowerCase() !== (addr.state || '').toLowerCase() &&
+              potentialProvince.toLowerCase() !== (addr.country || '').toLowerCase()
+            ) {
+              province = potentialProvince;
+            }
+          }
+        }
+        
+        if (!province || province === '-') {
+          if (addressString.includes('maynas')) province = 'Maynas';
+          else if (addressString.includes('requena')) province = 'Requena';
+          else if (addressString.includes('loreto nauta')) province = 'Loreto';
+        }
 
-        // DETECCIÓN DE PROVINCIA
-        let province = addr.state_district || addr.county;
-        if (!province && addressString.includes('maynas')) province = 'Maynas';
-        setSelectedProvince(province || 'Maynas');
-
-        // DETECCIÓN DE DEPARTAMENTO
-        setSelectedState(addr.state || 'Loreto');
+        setSelectedProvince(province || '-');
+        setSelectedState(addr.state || '-');
       }
     } catch (error) {
-      // 3. RESPALDO INTELIGENTE: Si la API falla por red, NO alteramos las coordenadas de lat/lng.
-      // Solo llenamos los textos con datos por defecto de la zona para que el usuario pueda continuar.
-      console.warn("⚠️ Nominatim saturado. Usando geolocalización aproximada de respaldo:", error);
-      
-      // Mantenemos valores lógicos locales en vez de romper la interfaz
-      setSelectedDistrict('Iquitos (Ubicación marcada)');
-      setSelectedProvince('Maynas');
+      console.warn("⚠️ Usando geolocalización aproximada de respaldo por error de red:", error);
+      setSelectedDistrict('Ubicación fijada');
+      setSelectedProvince('Evaluar en mapa');
       setSelectedState('Loreto');
     }
   };
@@ -171,20 +175,16 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
     <div className="min-h-screen bg-[#d1e2d9] bg-[radial-gradient(circle_at_top_right,_#e8f5ee_0%,_#d1e2d9_50%,_#b8cdc2_100%)] text-slate-900 pb-16 font-sans selection:bg-emerald-100">
       {/* HEADER PRINCIPAL */}      
 
-      <header className="p-8 md:p-14 mb-4 max-w-5xl mx-auto">
+      <header className="px-6 md:p-10 max-w-5xl mx-auto">
 
         <div className="max-w-3xl mx-auto space-y-16">
 
           <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-700 text-center block mb-7">
 
             Construyendo el mapa de inseguridad
-
             <br />
-
             ciudadana del Perú
-
             <br />
-
           </h1>
         </div>
 
