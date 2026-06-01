@@ -30,7 +30,7 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
                 map.removeLayer(heatLayerRef.current);
             }
 
-            // 🛠️ Solución limpia para satisfacer al linter estricto sin usar "any"
+            // Solución limpia para satisfacer al linter estricto sin usar "any"
             const ventanaDesconocida = window as unknown;
             const contenedorGlobal = ventanaDesconocida as Record<string, unknown>;
             const claveLeaflet = 'L';
@@ -42,18 +42,16 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
                     opciones: Record<string, unknown>
                 ) => L.Layer;
 
-                // Construimos la capa térmica con la paleta de colores de la imagen de referencia
+                // 🎨 Capa térmica configurada con 3 colores de ALTO CONTRASTE
                 heatLayerRef.current = crearCapaCalor(points, {
-                    radius: 25,       // Radio de dispersión de cada punto
-                    blur: 18,         // Desenfoque para suavizar la fusión de manchas
+                    radius: 28,       // Radio de dispersión óptimo para distancias largas
+                    blur: 20,         // Suaviza la fusión de las manchas térmicas
                     maxZoom: 17,      // Zoom límite de fusión
                     max: 1.0,         
                     gradient: {       
-                        0.2: '#0000ff', // Azul (Baja densidad)
-                        0.4: '#00ffff', // Cyan
-                        0.6: '#00ff00', // Verde (Densidad media)
-                        0.8: '#ffff00', // Amarillo (Zona de cuidado)
-                        1.0: '#ff0000'  // Rojo vivo (Foco crítico de delincuencia)
+                        0.3: '#0066ff', // 1. Azul Eléctrico (Alta visibilidad en vista macro/Perú)
+                        0.7: '#ffff00', // 2. Amarillo (Densidad media / Alerta)
+                        1.0: '#ff0000'  // 3. Rojo Vivo (Focos críticos de delincuencia)
                     }
                 }).addTo(map);
             }
@@ -88,7 +86,7 @@ export default function MapaClient() {
     const [heatPoints, setHeatPoints] = useState<[number, number, number][]>([]);
     const [loading, setLoading] = useState(true);
     
-    // 🗺️ Configuración solicitada: El mapa inicia mostrando todo el Perú de forma general
+    // 🗺️ Configuración: El mapa inicia mostrando todo el Perú de forma general
     const PERU_CENTER: [number, number] = [-9.1899, -75.0151];
     const ZOOM_GENERAL = 5.4;
 
@@ -132,10 +130,10 @@ export default function MapaClient() {
             {/* ENCABEZADO INFORMATIVO */}
             <div className="space-y-4">
                 <h1 className="text-3xl md:text-4xl font-black text-[#004d3d] tracking-tight leading-tight">
-                    Mapa de isneguridad ciudada del Perú
+                    Mapa de Inseguridad Ciudadana del Perú
                 </h1>
                 <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                    Visualiza los reportes ciudadanos en tiempo real en las zonas mas afectadas.
+                    Visualiza los reportes ciudadanos en tiempo real en las zonas más afectadas.
                 </p>
             </div>
 
