@@ -226,7 +226,7 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
         </div>
       </header >
 
-      <main className="px-6 space-y-10 max-w-2xl mx-auto">
+      <main className="px-6 md:p-10 max-w-5xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-10">
 
           {/* 1. UBICACIÓN */}
@@ -262,11 +262,12 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
 
 
             {/* TIPO DE HECHO */}
+           {/* TIPO DE HECHO (MODIFICADO A 2 COLUMNAS) */}
             <div className="space-y-3">
               <label className="text-sm font-black text-slate-700 uppercase tracking-wide">
                 ¿Qué tipo de hecho de inseguridad ocurrió? [Obligado]
               </label>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
                   'Robo con violencia o amenaza',
                   'Hurto (sin que me diera cuenta)',
@@ -292,14 +293,16 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
                   </label>
                 ))}
 
-                {/* Campo dinámico para "Otro" */}
+                {/* Campo dinámico para "Otro" ocupando las dos columnas */}
                 {incidentType === 'Otro' && (
-                  <input
-                    name="incidentTypeOther"
-                    placeholder="Especifica el tipo de incidente"
-                    className="w-full border-b-2 border-emerald-600 py-3 text-base outline-none bg-transparent animate-in fade-in slide-in-from-top-1"
-                    required
-                  />
+                  <div className="col-span-1 md:col-span-2">
+                    <input
+                      name="incidentTypeOther"
+                      placeholder="Especifica el tipo de incidente"
+                      className="w-full border-b-2 border-emerald-600 py-3 text-base outline-none bg-transparent animate-in fade-in slide-in-from-top-1"
+                      required
+                    />
+                  </div>
                 )}
               </div>
             </div>

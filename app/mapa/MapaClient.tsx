@@ -100,7 +100,7 @@ export default function MapaClient() {
                         maxZoom: 18,         // Mantiene el color rojo intenso incluso al ver las calles de cerca
                         minOpacity: 0.2,     // Un poquito más de fuerza inicial para el halo azul
                         max: 0.2,            // Bajado para que el núcleo se pinte de rojo al instante
-                        gradient: {       
+                        gradient: {        
                             0.3: '#0066ff',  // 1. Azul (borde sutil)
                             0.7: '#ffff00',  // 2. Amarillo (transición)
                             1.0: '#ff0000'   // 3. Rojo (núcleo intenso)
@@ -144,16 +144,17 @@ export default function MapaClient() {
     }, [reportes]);
 
     return (
-        <div className="w-full h-full relative block">
+        // Se cambió a 'w-screen' y se quitaron remanentes de padding para blindar la vista móvil
+        <div className="w-screen h-full min-h-full relative block p-0 m-0 overflow-hidden">
             <MapContainer
                 center={PERU_CENTER} 
                 zoom={ZOOM_GENERAL} 
                 scrollWheelZoom={true}
-                className="w-full h-full"
+                className="w-full h-full m-0 p-0"
                 zoomSnap={0.1}
                 zoomDelta={0.5}
                 ref={mapRef}
-                style={{ height: '100%', width: '100%', position: 'absolute', inset: 0 }}
+                style={{ height: '100%', width: '100%', position: 'absolute', inset: 0, margin: 0, padding: 0 }}
             >
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
