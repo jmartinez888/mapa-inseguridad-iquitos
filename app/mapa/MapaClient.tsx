@@ -167,7 +167,7 @@ export default function MapaClient() {
                 <div className="absolute top-6 right-6 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-3">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
                     <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
-                        Calculando mapa térmico...
+                        Calculando mapa térmico....
                     </span>
                 </div>
             )}
