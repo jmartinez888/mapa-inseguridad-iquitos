@@ -511,6 +511,53 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
 
             {/* 3. CONDICIONES LEGALES (Llamado modular) */}
 <TermsCheckbox checked={acceptTerms} onChange={setAcceptTerms} />
+{/* 💰 TARJETA DE APOYO ECONÓMICO (QR YAPES Y PLIN) */}
+<div className="w-full bg-slate-50 border-2 border-emerald-100/70 rounded-3xl p-5 md:p-6 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-300">
+  <div className="flex items-center gap-2.5">
+    <span className="text-xl">🛡️</span>
+    <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-emerald-900 leading-tight">
+      Apoya la investigación de la inseguridad ciudadana en el Perú
+    </h3>
+  </div>
+
+  <p className="text-xs text-slate-600 leading-relaxed">
+    Este proyecto es independiente y autogestionado. Si quieres apoyar los costos operativos 
+    (servidor, base de datos, análisis, informes, diseño, difusión, trabajo de campo, etc.), 
+    cualquier aporte suma.
+  </p>
+
+  
+ {/* Grid de Códigos QR */}
+<div className="grid grid-cols-2 gap-5 md:gap-6 mt-3 max-w-md mx-auto w-full px-2">
+  {/* Bloque Yape */}
+  <div className="flex flex-col items-center gap-1.5">
+    <span className="text-xs font-black text-purple-700 tracking-widest uppercase">YAPE</span>
+    <div className="w-full aspect-[4/3] rounded-2xl relative overflow-hidden border border-slate-200/60 shadow-sm flex items-center justify-center bg-white p-2">
+      <img 
+        src="/yape.png"
+        alt="QR Yape" 
+        className="w-full h-full object-contain"
+      />
+    </div>
+  </div>
+
+  {/* Bloque Plin */}
+  <div className="flex flex-col items-center gap-1.5">
+    <span className="text-xs font-black text-cyan-600 tracking-widest uppercase">PLIN</span>
+    <div className="w-full aspect-[4/3] rounded-2xl relative overflow-hidden border border-slate-200/60 shadow-sm flex items-center justify-center bg-white p-2">
+      <img 
+        src="/plin.png"
+        alt="QR Plin" 
+        className="w-full h-full object-contain"
+      />
+    </div>
+  </div>
+</div>
+
+  <p className="text-[10px] text-center text-slate-400 font-semibold italic">
+    ¡Muchas gracias por ayudarnos a mantener activa esta herramienta comunitaria!
+  </p>
+</div>
 
 <button
   type="submit"
@@ -526,6 +573,7 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
   }
   className="w-full bg-emerald-700 text-white py-5 rounded-[2rem] text-lg font-black shadow-xl hover:bg-emerald-800 transition-all active:scale-95 disabled:bg-slate-400 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
 >
+  
   {isSubmitting ? 'GUARDANDO REPORTE...' : 'REGISTRAR MI REPORTE ANÓNIMO'}
 </button>
             <button
