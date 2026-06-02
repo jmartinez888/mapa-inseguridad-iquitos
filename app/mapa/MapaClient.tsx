@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import 'leaflet/dist/leaflet.css'
-import { MapContainer, TileLayer, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer } from 'react-leaflet'
 
 interface Report {
     id: string;
@@ -16,77 +16,12 @@ interface Report {
     timeOfDay: string;
 }
 
-// --- SUBCOMPONENTE DE CAPA DE CALOR (HEATMAP) ---
-function HeatmapLayer({ points }: { points: [number, number, number][] }) {
-    const map = useMap();
-    const heatLayerRef = useRef<L.Layer | null>(null);
-
-    useEffect(() => {
-        if (!map || typeof window === 'undefined') return;
-
-        // Importamos el plugin dinámicamente en el cliente
-        import('leaflet.heat' as string).then(() => {
-            if (heatLayerRef.current) {
-                map.removeLayer(heatLayerRef.current);
-            }
-
-            // Solución limpia para satisfacer al linter estricto sin usar "any"
-            const ventanaDesconocida = window as unknown;
-            const contenedorGlobal = ventanaDesconocida as Record<string, unknown>;
-            const claveLeaflet = 'L';
-            const leafletGlobal = contenedorGlobal[claveLeaflet] as Record<string, unknown> | undefined;
-
-            if (leafletGlobal && typeof leafletGlobal.heatLayer === 'function') {
-                const crearCapaCalor = leafletGlobal.heatLayer as (
-                    pts: [number, number, number][],
-                    opciones: Record<string, unknown>
-                ) => L.Layer;
-
-                // 🎨 Capa térmica configurada con 3 colores de ALTO CONTRASTE
-                heatLayerRef.current = crearCapaCalor(points, {
-                    radius: 28,       // Radio de dispersión óptimo para distancias largas
-                    blur: 20,         // Suaviza la fusión de las manchas térmicas
-                    maxZoom: 17,      // Zoom límite de fusión
-                    max: 1.0,         
-                    gradient: {       
-                        0.3: '#0066ff', // 1. Azul Eléctrico (Alta visibilidad en vista macro/Perú)
-                        0.7: '#ffff00', // 2. Amarillo (Densidad media / Alerta)
-                        1.0: '#ff0000'  // 3. Rojo Vivo (Focos críticos de delincuencia)
-                    }
-                }).addTo(map);
-            }
-        }).catch((err) => {
-            console.error("Error al cargar la capa térmica en el cliente:", err);
-        });
-
-        return () => {
-            if (heatLayerRef.current && map) {
-                map.removeLayer(heatLayerRef.current);
-            }
-        };
-    }, [map, points]);
-
-    return null;
-}
-
-// --- SUBCOMPONENTE DE CÁMARA INICIAL ---
-function ActualizadorCamara({ center, zoom }: { center: [number, number]; zoom: number }) {
-    const map = useMap();
-    useEffect(() => {
-        if (center && map) {
-            map.setView(center, zoom);
-            map.invalidateSize(); 
-        }
-    }, [center, zoom, map]);
-    return null;
-}
-
-// --- COMPONENTE PRINCIPAL ---
 export default function MapaClient() {
-    const [heatPoints, setHeatPoints] = useState<[number, number, number][]>([]);
     const [loading, setLoading] = useState(true);
+    const mapRef = useRef<L.Map | null>(null);
+    const heatLayerRef = useRef<L.Layer | null>(null);
+    const [reportes, setReportes] = useState<[number, number, number][]>([]);
     
-    // 🗺️ Configuración: El mapa inicia mostrando todo el Perú de forma general
     const PERU_CENTER: [number, number] = [-9.1899, -75.0151];
     const ZOOM_GENERAL = 5.4;
 
@@ -97,7 +32,6 @@ export default function MapaClient() {
                 return res.json();
             })
             .then((json: Report[]) => {
-                // Filtramos las coordenadas válidas de la Base de Datos
                 const formattedPoints: [number, number, number][] = json
                     .filter((item) => {
                         const latitud = item.lat ?? item.latitude;
@@ -112,69 +46,119 @@ export default function MapaClient() {
                     .map((item) => {
                         const lat = Number(item.lat ?? item.latitude);
                         const lng = Number(item.lng ?? item.longitude);
-                        // Estructura para leaflet.heat: [lat, lng, intensidad]
                         return [lat, lng, 1.0];
                     });
-
-                setHeatPoints(formattedPoints);
-                setLoading(false);
+                setReportes(formattedPoints);
             })
             .catch(err => {
-                console.error("Error al cargar reportes para el mapa de calor:", err);
+                console.error("Error al procesar la API de reportes:", err);
                 setLoading(false);
             });
     }, []);
 
+    useEffect(() => {
+        if (typeof window === 'undefined' || reportes.length === 0) return;
+
+        let active = true;
+
+        const inicializarCapaTermica = (mapaInstancia: L.Map) => {
+            mapaInstancia.invalidateSize();
+
+            const contenedor = mapaInstancia.getContainer();
+            if (contenedor.clientHeight === 0 || contenedor.clientWidth === 0) {
+                requestAnimationFrame(() => {
+                    if (active) inicializarCapaTermica(mapaInstancia);
+                });
+                return;
+            }
+
+            import('leaflet.heat' as string).then(() => {
+                if (!active || !mapaInstancia) return;
+
+                if (heatLayerRef.current) {
+                    mapaInstancia.removeLayer(heatLayerRef.current);
+                }
+
+                const globalObj = window as unknown as Record<string, Record<string, unknown>>;
+                const leafletGlobal = globalObj['L'];
+
+                if (leafletGlobal && typeof leafletGlobal.heatLayer === 'function') {
+                    const crearCapaCalor = leafletGlobal.heatLayer as (
+                        pts: [number, number, number][],
+                        opciones: Record<string, unknown>
+                    ) => L.Layer;
+
+                    // Renderizado 100% seguro con altura garantizada mayor a cero
+// Renderizado 100% seguro con altura garantizada mayor a cero
+   // Renderizado 100% seguro con altura garantizada mayor a cero
+heatLayerRef.current = crearCapaCalor(reportes, {
+    radius: 20,          // Mantiene el tamaño fino y estético del punto
+    blur: 18,            // Desenfoque equilibrado para el difuminado suave
+    maxZoom: 18,         // 🔥 CRÍTICO: Elevado a 16 para que mantenga el color rojo intenso incluso al ver las calles de cerca
+    minOpacity: 0.2,     // Un poquito más de fuerza inicial para el halo azul
+    max: 0.2,            // 🔥 CRÍTICO: Bajado a 0.4 para que no necesite acumular 20 reportes en la misma esquina para teñirse de rojo
+    gradient: {       
+        0.3: '#0066ff',  // 1. Azul (borde sutil)
+        0.7: '#ffff00',  // 2. Amarillo (transición)
+        1.0: '#ff0000'   // 3. Rojo (núcleo intenso)
+    }
+}).addTo(mapaInstancia);
+                }
+                setLoading(false);
+            }).catch((err) => {
+                console.error("Error al inicializar el plugin térmico:", err);
+                setLoading(false);
+            });
+        };
+
+        const mapaActual = mapRef.current;
+
+        if (mapaActual) {
+            mapaActual.setView(PERU_CENTER, ZOOM_GENERAL);
+            mapaActual.whenReady(() => {
+                inicializarCapaTermica(mapaActual);
+            });
+        }
+
+        return () => {
+            active = false;
+            if (heatLayerRef.current && mapRef.current) {
+                try {
+                    mapRef.current.removeLayer(heatLayerRef.current);
+                } catch (e) {
+                    // Desmontado silencioso
+                }
+            }
+        };
+    }, [reportes]);
+
     return (
-        <div className="max-w-6xl mx-auto px-4 py-8 space-y-10 font-sans">
-            {/* ENCABEZADO INFORMATIVO */}
-            <div className="space-y-4">
-                <h1 className="text-3xl md:text-4xl font-black text-[#004d3d] tracking-tight leading-tight">
-                    Mapa de Inseguridad Ciudadana del Perú
-                </h1>
-                <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-                    Visualiza los reportes ciudadanos en tiempo real en las zonas más afectadas.
-                </p>
-            </div>
+        <div className="w-full h-full relative block">
+            <MapContainer
+                center={PERU_CENTER} 
+                zoom={ZOOM_GENERAL} 
+                scrollWheelZoom={true}
+                className="w-full h-full"
+                zoomSnap={0.1}
+                zoomDelta={0.5}
+                ref={mapRef}
+                style={{ height: '100%', width: '100%', position: 'absolute', inset: 0 }}
+            >
+                <TileLayer
+                    url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                />
+            </MapContainer>
 
-            {/* CONTENEDOR DEL MAPA */}
-            <div className="h-[650px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 relative bg-slate-50">
-                <MapContainer
-                    center={PERU_CENTER} 
-                    zoom={ZOOM_GENERAL} 
-                    scrollWheelZoom={true}
-                    className="h-full w-full"
-                    zoomSnap={0.1}
-                    zoomDelta={0.5}
-                >
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    />
-
-                    {/* Inyectamos la capa térmica si existen puntos cargados */}
-                    {heatPoints.length > 0 && <HeatmapLayer points={heatPoints} />}
-
-                    {/* Mantiene la cámara perfectamente posicionada en el inicio */}
-                    <ActualizadorCamara center={PERU_CENTER} zoom={ZOOM_GENERAL} />
-                </MapContainer>
-
-                {/* INDICADOR DE CARGA */}
-                {loading && (
-                    <div className="absolute top-6 right-6 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-3">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
-                        <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
-                            Calculando mapa térmico...
-                        </span>
-                    </div>
-                )}
-            </div>
-
-            <footer className="text-center pb-6">
-                <p className="text-sm text-slate-400 font-medium italic">
-                    Visualización analítica basada en reportes vecinales compartidos de forma anónima.
-                </p>
-            </footer>
+            {/* INDICADOR DE CARGA FLOTANTE */}
+            {loading && (
+                <div className="absolute top-6 right-6 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-3">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+                    <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
+                        Calculando mapa térmico...
+                    </span>
+                </div>
+            )}
         </div>
     );
 }

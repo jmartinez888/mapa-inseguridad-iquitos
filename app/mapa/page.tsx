@@ -7,9 +7,9 @@ import Link from 'next/link'
 const MapaClient = dynamic(() => import('./MapaClient'), {
   ssr: false,
   loading: () => (
-    <div className="h-[600px] w-full bg-slate-100 animate-pulse rounded-[3rem] flex items-center justify-center">
-      <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">
-        Cargando interfaz de mapa...
+    <div className="h-screen w-full bg-slate-100 animate-pulse flex items-center justify-center">
+      <span className="text-slate-400 font-black uppercase tracking-widest text-xs">
+        Cargando interfaz de mapa térmico...
       </span>
     </div>
   )
@@ -17,35 +17,46 @@ const MapaClient = dynamic(() => import('./MapaClient'), {
 
 export default function MapaPage() {
   return (
-    <main className="min-h-screen bg-white p-6 md:p-12">
-
-      {/* CONTENEDOR DEL BOTÓN "VOLVER" */}
-      <div className="max-w-6xl mx-auto mb-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-3 text-emerald-800 hover:text-emerald-600 transition-all group"
-        >
-          {/* Flecha estilizada similar a la imagen */}
-          <span className="text-2xl font-light transform group-hover:-translate-x-1 transition-transform">
-            ←
-          </span>
-          <span className="text-sm font-black uppercase tracking-[0.2em]">
-            Volver al formulario
-          </span>
-        </Link>
+    <main className="w-full h-screen bg-slate-50 flex flex-col m-0 p-0 overflow-hidden">
+      
+      {/* SECCIÓN SUPERIOR DE NAVEGACIÓN Y TÍTULO UNIFICADO */}
+      <div className="w-full bg-white px-6 py-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm z-[999] shrink-0">
+        <div className="flex items-center gap-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-emerald-800 hover:text-emerald-600 transition-all group shrink-0"
+          >
+            <span className="text-xl font-light transform group-hover:-translate-x-1 transition-transform">
+              ←
+            </span>
+            <span className="text-xs font-black uppercase tracking-[0.15em]">
+              Volver
+            </span>
+          </Link>
+          
+          <div className="hidden md:block w-px h-6 bg-slate-200" />
+          
+          <div>
+            <h1 className="text-lg md:text-xl font-black text-[#004d3d] tracking-tight leading-none">
+              Mapa de Inseguridad Ciudadana
+            </h1>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Visualización analítica en tiempo real basada en reportes vecinales.
+            </p>
+          </div>
+        </div>
+        
+        <div className="sm:text-right shrink-0">
+          <p className="text-[9px] font-black tracking-widest text-[#004d3d]/60 uppercase">
+            DIRECCIÓN DE GESTIÓN DE LA INFORMACIÓN - IIAP
+          </p>
+        </div>
       </div>
 
-      {/* CONTENEDOR DEL MAPA DE INSEGURIDAD - IQUITOS */}
-      <div className="max-w-6xl mx-auto shadow-2xl rounded-[3.5rem] overflow-hidden border border-slate-100">
+      {/* CONTENEDOR DEL MAPA EXPANDIBLE REAL AL 100% DEL ESPACIO RESTANTE */}
+      <div className="flex-1 w-full relative block">
         <MapaClient />
       </div>
-
-      {/* FOOTER OPCIONAL PARA MANTENER CONSISTENCIA */}
-      <footer className="max-w-6xl mx-auto mt-10 text-center">
-        <p className="text-[10px] text-emerald-900/40 uppercase tracking-widest font-black">
-          Visualización de datos - Soil Plant Iquitos
-        </p>
-      </footer>
 
     </main>
   )
