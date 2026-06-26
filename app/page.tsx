@@ -530,32 +530,36 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
   </p>
 
   
- {/* Grid de Códigos QR */}
-<div className="grid grid-cols-2 gap-5 md:gap-6 mt-3 max-w-md mx-auto w-full px-2">
-  {/* Bloque Yape */}
-  <div className="flex flex-col items-center gap-1.5">
-    <span className="text-xs font-black text-purple-700 tracking-widest uppercase">YAPE</span>
-    <div className="w-full aspect-[4/3] rounded-2xl relative overflow-hidden border border-slate-200/60 shadow-sm flex items-center justify-center bg-white p-2">
-      <img 
-        src="/yape.png"
-        alt="QR Yape" 
-        className="w-full h-full object-contain"
-      />
+ {/* Grid de Códigos QR Optimizado para Responsivo */}
+  {/* En móvil: 1 columna (grid-cols-1). En computadoras: 2 columnas (md:grid-cols-2) */}
+  {/* En móvil reducimos el max-w-xs para que los QR no se estiren de forma desproporcionada hacia los lados */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-3 max-w-xs md:max-w-md mx-auto w-full px-2">
+    {/* Bloque Yape */}
+    <div className="flex flex-col items-center gap-1.5">
+      <span className="text-xs font-black text-purple-700 tracking-widest uppercase">YAPE</span>
+      {/* Cambiado aspect-[4/3] a aspect-square para que los QR mantengan una proporción 1:1 perfecta y grande */}
+      <div className="w-full aspect-square rounded-2xl relative overflow-hidden border border-slate-200/60 shadow-sm flex items-center justify-center bg-white p-3">
+        <img 
+          src="/yape.png"
+          alt="QR Yape" 
+          className="w-full h-full object-contain"
+        />
+      </div>
     </div>
-  </div>
 
-  {/* Bloque Plin */}
-  <div className="flex flex-col items-center gap-1.5">
-    <span className="text-xs font-black text-cyan-600 tracking-widest uppercase">PLIN</span>
-    <div className="w-full aspect-[4/3] rounded-2xl relative overflow-hidden border border-slate-200/60 shadow-sm flex items-center justify-center bg-white p-2">
-      <img 
-        src="/plin.png"
-        alt="QR Plin" 
-        className="w-full h-full object-contain"
-      />
+    {/* Bloque Plin */}
+    <div className="flex flex-col items-center gap-1.5">
+      <span className="text-xs font-black text-cyan-600 tracking-widest uppercase">PLIN</span>
+      {/* Cambiado aspect-[4/3] a aspect-square para que los QR mantengan una proporción 1:1 perfecta y grande */}
+      <div className="w-full aspect-square rounded-2xl relative overflow-hidden border border-slate-200/60 shadow-sm flex items-center justify-center bg-white p-3">
+        <img 
+          src="/plin.png"
+          alt="QR Plin" 
+          className="w-full h-full object-contain"
+        />
+      </div>
     </div>
   </div>
-</div>
 
   <p className="text-[10px] text-center text-slate-400 font-semibold italic">
     ¡Muchas gracias por ayudarnos a mantener activa esta herramienta comunitaria!
