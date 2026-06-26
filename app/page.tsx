@@ -214,7 +214,7 @@ const [acceptTerms, setAcceptTerms] = useState<boolean>(false)
               Soil Plant
             </a>
             <span className="block font-semibold text-slate-800">
-              Dudas:
+              Consultas:
               <strong className="ml-2 text-emerald-700">+51 987189611 / soilplant@soilplantperu.com</strong>
             </span>
 
