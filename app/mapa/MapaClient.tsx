@@ -112,7 +112,7 @@ export default function MapaClient() {
                         const coordenadas = reportes.map(r => [r[0], r[1]] as [number, number]);
                         mapaInstancia.fitBounds(coordenadas, {
                             padding: [50, 50], // Margen de seguridad para no cortar los halos en los bordes
-                            maxZoom: 14        // Vista urbana ideal para calles de Iquitos sin sobre-acercarse
+                            maxZoom: 20        // Vista urbana ideal para calles de Iquitos sin sobre-acercarse
                         });
                     }
                 }
@@ -145,7 +145,7 @@ export default function MapaClient() {
 
     return (
         // Se cambió a 'w-screen' y se quitaron remanentes de padding para blindar la vista móvil
-        <div className="w-screen h-full min-h-full relative block p-0 m-0 overflow-hidden">
+        <div className="w-full h-full relative block p-0 m-0 overflow-hidden">
             <MapContainer
                 center={PERU_CENTER} 
                 zoom={ZOOM_GENERAL} 
@@ -157,8 +157,8 @@ export default function MapaClient() {
                 style={{ height: '100%', width: '100%', position: 'absolute', inset: 0, margin: 0, padding: 0 }}
             >
                 <TileLayer
-                    url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
             </MapContainer>
 
