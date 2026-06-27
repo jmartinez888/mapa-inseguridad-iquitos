@@ -44,13 +44,8 @@ export default function MapaPage() {
               Visualización analítica en tiempo real basada en reportes vecinales.
             </p>
           </div>
-        </div>
+        </div>      
         
-        <div className="sm:text-right shrink-0">
-          <p className="text-[9px] font-black tracking-widest text-[#004d3d]/60 uppercase">
-            DIRECCIÓN DE GESTIÓN DE LA INFORMACIÓN - IIAP
-          </p>
-        </div>
       </div>
 
       {/* CONTENEDOR DEL MAPA EXPANDIBLE REAL AL 100% DEL ESPACIO RESTANTE */}
